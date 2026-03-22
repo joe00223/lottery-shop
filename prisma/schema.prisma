@@ -39,15 +39,30 @@ model Schedule {
 }
 
 model ScratchTicket {
-  id            Int                   @id @default(autoincrement())
-  name          String
-  price         Int
-  sheetsPerBook Int
-  note          String?
-  active        Boolean               @default(true)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  inventoryLogs ScratchInventoryLog[]
+  id              Int                   @id @default(autoincrement())
+  name            String
+  price           Int
+  sheetsPerBook   Int
+  note            String?
+  active          Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  inventoryLogs   ScratchInventoryLog[]
+  floorInventory  FloorInventory[]
+}
+
+model FloorInventory {
+  id              Int           @id @default(autoincrement())
+  date            DateTime      @db.Date
+  scratchTicketId Int
+  scratchTicket   ScratchTicket @relation(fields: [scratchTicketId], references: [id])
+  unopened        Int           @default(0)
+  opened          Int           @default(0)
+  onDisplay       Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([date, scratchTicketId])
 }
 
 model ScratchInventoryLog {

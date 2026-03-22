@@ -8,6 +8,7 @@ const links = [
   { href: '/employees', label: '員工管理' },
   { href: '/scratch', label: '刮刮樂' },
   { href: '/inventory', label: '庫存管理' },
+  { href: '/floor-inventory', label: '現場庫存' },
   { href: '/settings', label: '店家設定' },
 ]
 
