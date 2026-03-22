@@ -62,6 +62,19 @@ export default function CheckoutPage() {
       ).sort(([a], [b]) => parseInt(a) - parseInt(b))
     : []
 
+  const FIELDS = [
+    { key: 'yesterdayDisplay' as const, label: '昨日檯面' },
+    { key: 'supplement' as const, label: '補張數' },
+    { key: 'todayDisplay' as const, label: '今日檯面' },
+    { key: 'sold' as const, label: '銷售張數' },
+  ]
+
+  const grandTotal = grouped.reduce((sum, [price, rows]) => {
+    const sheets = rows.reduce((s, r) => s + r.sold, 0)
+    return sum + sheets * parseInt(price)
+  }, 0)
+  const grandSheets = data ? data.rows.reduce((s, r) => s + r.sold, 0) : 0
+
   return (
     <div>
       {/* Header */}
@@ -96,96 +109,93 @@ export default function CheckoutPage() {
           請先在「刮刮樂」頁面新增種類
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-amber-200 shadow-sm">
-          <table className="border-collapse text-sm w-full">
-            <thead>
-              <tr className="bg-amber-100">
-                <th className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-900 font-bold text-center w-28">
-                  面額
-                </th>
-                <th className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-900 font-bold text-left">
-                  名稱
-                </th>
-                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-20">
-                  昨日檯面
-                </th>
-                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-20">
-                  補張數
-                </th>
-                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-20">
-                  今日檯面
-                </th>
-                <th className="border-b border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-24">
-                  銷售張數
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {grouped.map(([price, rows], gi) => {
-                const priceNum = parseInt(price)
-                const totalSheets = rows.reduce((s, r) => s + r.sold, 0)
-                const totalAmount = totalSheets * priceNum
-                const bgBase = gi % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'
+        <div className="space-y-6">
+          {grouped.map(([price, rows]) => {
+            const priceNum = parseInt(price)
+            const totalSheets = rows.reduce((s, r) => s + r.sold, 0)
+            const totalAmount = totalSheets * priceNum
 
-                return rows.map((r, ri) => (
-                  <tr key={r.id} className={bgBase}>
-                    {/* Left summary cell — rowspan for entire price group */}
-                    {ri === 0 && (
-                      <td
-                        rowSpan={rows.length}
-                        className="border-b border-r border-amber-200 px-3 py-3 text-center align-middle bg-amber-50"
-                      >
-                        <div className="font-bold text-amber-950 text-base">
-                          ${priceNum.toLocaleString()}
-                        </div>
-                        <div className={`text-sm font-semibold mt-1 ${totalSheets > 0 ? 'text-amber-800' : 'text-gray-400'}`}>
-                          {totalSheets} 張
-                        </div>
-                        <div className={`text-xs mt-0.5 ${totalAmount > 0 ? 'text-amber-700' : 'text-gray-400'}`}>
-                          ${totalAmount.toLocaleString()}
-                        </div>
-                      </td>
-                    )}
-                    <td className="border-b border-r border-amber-200 px-4 py-2.5 text-gray-900 font-semibold">
-                      {r.name}
-                    </td>
-                    <td className="border-b border-r border-amber-200 px-3 py-2.5 text-center text-gray-700 font-medium">
-                      {r.yesterdayDisplay}
-                    </td>
-                    <td className={`border-b border-r border-amber-100 px-3 py-2.5 text-center font-medium ${r.supplement > 0 ? 'text-green-600' : r.supplement < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                      {r.supplement > 0 ? `+${r.supplement}` : r.supplement}
-                    </td>
-                    <td className="border-b border-r border-amber-200 px-3 py-2.5 text-center text-gray-700 font-medium">
-                      {r.todayDisplay}
-                    </td>
-                    <td className={`border-b border-amber-100 px-3 py-2.5 text-center font-bold ${r.sold > 0 ? 'text-gray-900' : 'text-gray-400'}`}>
-                      {r.sold}
-                    </td>
-                  </tr>
-                ))
-              })}
+            return (
+              <div key={price}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    ${priceNum.toLocaleString()}
+                  </span>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-amber-200 shadow-sm">
+                  <table className="border-collapse text-sm">
+                    <thead>
+                      <tr>
+                        <th className="border-b border-r border-amber-300 bg-amber-50 px-4 py-2 text-amber-900 font-bold text-left min-w-[80px]">
+                          欄位
+                        </th>
+                        {rows.map(r => (
+                          <th key={r.id}
+                            className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-950 font-bold text-center min-w-[72px]"
+                          >
+                            {r.name}
+                          </th>
+                        ))}
+                        <th className="border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-700 font-bold text-center min-w-[72px]">
+                          小計
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {FIELDS.map((f, fi) => {
+                        const rowTotal = rows.reduce((s, r) => s + r[f.key], 0)
+                        const isSold = f.key === 'sold'
+                        return (
+                          <tr key={f.key} className={fi % 2 === 0 ? 'bg-white' : 'bg-amber-50/40'}>
+                            <td className="border-b border-r border-amber-200 px-4 py-2 text-amber-900 font-semibold text-xs">
+                              {f.label}
+                            </td>
+                            {rows.map(r => {
+                              const v = r[f.key]
+                              let cls = 'text-gray-700 font-medium'
+                              if (f.key === 'supplement') {
+                                cls = v > 0 ? 'text-green-600 font-medium' : v < 0 ? 'text-red-500 font-medium' : 'text-gray-400'
+                              } else if (isSold) {
+                                cls = v > 0 ? 'text-gray-900 font-bold' : 'text-gray-400 font-bold'
+                              }
+                              return (
+                                <td key={r.id}
+                                  className="border-b border-r border-amber-100 px-3 py-2 text-center"
+                                >
+                                  <span className={cls}>
+                                    {f.key === 'supplement' && v > 0 ? `+${v}` : v}
+                                  </span>
+                                </td>
+                              )
+                            })}
+                            <td className="border-b border-amber-100 px-3 py-2 text-center">
+                              {isSold ? (
+                                <div>
+                                  <div className={`font-bold ${rowTotal > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{rowTotal} 張</div>
+                                  <div className={`text-xs ${totalAmount > 0 ? 'text-amber-700' : 'text-gray-400'}`}>${totalAmount.toLocaleString()}</div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-500 font-medium">{rowTotal}</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
+          })}
 
-              {/* Total row */}
-              {grouped.length > 0 && (() => {
-                const grandTotal = grouped.reduce((sum, [price, rows]) => {
-                  const sheets = rows.reduce((s, r) => s + r.sold, 0)
-                  return sum + sheets * parseInt(price)
-                }, 0)
-                const grandSheets = data.rows.reduce((s, r) => s + r.sold, 0)
-                return (
-                  <tr className="bg-amber-100">
-                    <td colSpan={5} className="border-t-2 border-amber-300 px-4 py-3 text-right font-bold text-amber-950">
-                      總計
-                    </td>
-                    <td className="border-t-2 border-amber-300 px-3 py-3 text-center">
-                      <div className="font-bold text-amber-950">{grandSheets} 張</div>
-                      <div className="text-xs text-amber-600">${grandTotal.toLocaleString()}</div>
-                    </td>
-                  </tr>
-                )
-              })()}
-            </tbody>
-          </table>
+          {/* Grand total */}
+          {grouped.length > 0 && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-6 py-4 flex items-center gap-6">
+              <span className="font-bold text-amber-950 text-base">總計</span>
+              <span className="font-bold text-amber-950">{grandSheets} 張</span>
+              <span className="text-amber-700 font-semibold">${grandTotal.toLocaleString()}</span>
+            </div>
+          )}
         </div>
       )}
     </div>
