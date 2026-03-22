@@ -36,6 +36,7 @@ function toLocalDatetime(date: Date) {
 export default function InventoryPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>({
@@ -50,9 +51,14 @@ export default function InventoryPage() {
     try {
       const res = await fetch('/api/inventory')
       const data = await res.json()
-      if (Array.isArray(data)) setTickets(data)
+      if (Array.isArray(data)) {
+        setTickets(data)
+        setError(null)
+      } else {
+        setError(data.error ?? JSON.stringify(data))
+      }
     } catch (e) {
-      console.error('inventory fetch error', e)
+      setError(String(e))
     } finally {
       setLoading(false)
     }
@@ -95,6 +101,7 @@ export default function InventoryPage() {
   }, {})
 
   if (loading) return <div className="text-amber-700 mt-8 text-center">載入中...</div>
+  if (error) return <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-mono break-all">{error}</div>
 
   return (
     <div className="max-w-2xl">
