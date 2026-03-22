@@ -44,18 +44,12 @@ export default function FloorInventoryPage() {
     const res = await fetch(`/api/floor-inventory?from=${from}&to=${to}`)
     const d = await res.json()
     if (d.error) throw new Error(d.error)
-
     const dateList = Object.keys(d).sort((a, b) => a.localeCompare(b))
     setDates(dateList)
-
     const map: Record<string, CellData> = {}
     for (const [date, records] of Object.entries(d)) {
       for (const r of records as (CellData & { scratchTicketId: number })[]) {
-        map[`${date}__${r.scratchTicketId}`] = {
-          unopened: r.unopened,
-          opened: r.opened,
-          onDisplay: r.onDisplay,
-        }
+        map[`${date}__${r.scratchTicketId}`] = { unopened: r.unopened, opened: r.opened, onDisplay: r.onDisplay }
       }
     }
     setData(map)
@@ -73,10 +67,7 @@ export default function FloorInventoryPage() {
     }
   }, [loadTickets, loadFloor])
 
-  useEffect(() => {
-    const d = last7Days()
-    load(d.from, d.to)
-  }, [])
+  useEffect(() => { const d = last7Days(); load(d.from, d.to) }, [])
 
   const applyFilter = () => load(filterInput.from, filterInput.to)
 
@@ -103,10 +94,7 @@ export default function FloorInventoryPage() {
     setEditing({ date, ticketId, field, value: String(val) })
   }
 
-  const commitAndMove = (
-    ed: EditingCell,
-    direction?: 'right' | 'left' | 'up' | 'down',
-  ) => {
+  const commitAndMove = (ed: EditingCell, direction?: 'right' | 'left' | 'up' | 'down') => {
     if (!ed) return
     const { date, ticketId, field, value } = ed
     const num = Math.max(0, parseInt(value) || 0)
@@ -123,31 +111,28 @@ export default function FloorInventoryPage() {
       return { ...prev, [key]: updated }
     })
 
-    if (!direction) {
-      setEditing(null)
-      return
-    }
+    if (!direction) { setEditing(null); return }
 
-    // columns = dates × fields
-    const columns = dates.flatMap(d => FIELDS.map(f => ({ date: d, field: f.key as Field })))
-    const colIdx = columns.findIndex(c => c.date === date && c.field === field)
+    // rows = dates × fields; columns = tickets
+    const rows = dates.flatMap(d => FIELDS.map(f => ({ date: d, field: f.key as Field })))
+    const rowIdx = rows.findIndex(r => r.date === date && r.field === field)
     const ticketIdx = tickets.findIndex(t => t.id === ticketId)
 
-    let nc = colIdx, nt = ticketIdx
-    if (direction === 'right') nc = Math.min(nc + 1, columns.length - 1)
-    else if (direction === 'left') nc = Math.max(nc - 1, 0)
-    else if (direction === 'down') nt = Math.min(nt + 1, tickets.length - 1)
-    else if (direction === 'up') nt = Math.max(nt - 1, 0)
+    let nr = rowIdx, nt = ticketIdx
+    if (direction === 'right') nt = Math.min(nt + 1, tickets.length - 1)
+    else if (direction === 'left') nt = Math.max(nt - 1, 0)
+    else if (direction === 'down') nr = Math.min(nr + 1, rows.length - 1)
+    else if (direction === 'up') nr = Math.max(nr - 1, 0)
 
-    const nextCol = columns[nc]
+    const nextRow = rows[nr]
     const nextTicket = tickets[nt]
 
     navigating.current = true
     setEditing({
-      date: nextCol.date,
+      date: nextRow.date,
       ticketId: nextTicket.id,
-      field: nextCol.field,
-      value: String(data[`${nextCol.date}__${nextTicket.id}`]?.[nextCol.field] ?? 0),
+      field: nextRow.field,
+      value: String(data[`${nextRow.date}__${nextTicket.id}`]?.[nextRow.field] ?? 0),
     })
   }
 
@@ -156,7 +141,7 @@ export default function FloorInventoryPage() {
     commitAndMove(ed)
   }
 
-  // Group tickets by price
+  // Group tickets by price for column headers
   const grouped = Object.entries(
     tickets.reduce<Record<number, Ticket[]>>((acc, t) => {
       if (!acc[t.price]) acc[t.price] = []
@@ -173,34 +158,23 @@ export default function FloorInventoryPage() {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-amber-950">現場庫存</h1>
         <div className="flex items-center gap-2 flex-wrap">
-          <input
-            type="date"
-            value={filterInput.from}
+          <input type="date" value={filterInput.from}
             onChange={e => setFilterInput(f => ({ ...f, from: e.target.value }))}
             className="border border-amber-300 rounded-lg px-2 py-1 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
           <span className="text-gray-600 text-sm">～</span>
-          <input
-            type="date"
-            value={filterInput.to}
+          <input type="date" value={filterInput.to}
             onChange={e => setFilterInput(f => ({ ...f, to: e.target.value }))}
             className="border border-amber-300 rounded-lg px-2 py-1 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
-          <button
-            onClick={applyFilter}
+          <button onClick={applyFilter}
             className="px-3 py-1.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-lg text-sm font-medium hover:bg-amber-200"
-          >
-            查詢
-          </button>
+          >查詢</button>
           <div className="w-px h-5 bg-amber-200" />
-          <button
-            onClick={() => addDate(toDateStr(new Date()))}
+          <button onClick={() => addDate(toDateStr(new Date()))}
             className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600"
-          >
-            + 今日
-          </button>
-          <input
-            type="date"
+          >+ 今日</button>
+          <input type="date"
             className="border border-amber-300 rounded-lg px-2 py-1 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
             onChange={e => { if (e.target.value) { addDate(e.target.value); e.target.value = '' } }}
             title="新增其他日期"
@@ -216,84 +190,78 @@ export default function FloorInventoryPage() {
         <div className="overflow-x-auto rounded-xl border border-amber-200 shadow-sm">
           <table className="border-collapse text-sm">
             <thead>
+              {/* Row 1: denomination groups */}
               <tr>
-                <th className="border-b-2 border-r border-amber-300 bg-amber-100 px-3 py-2.5 text-amber-950 font-bold text-center sticky left-0 z-20 min-w-[72px]" rowSpan={2}>
-                  面額
+                <th className="border-b border-r border-amber-300 bg-amber-100 px-4 py-2 text-amber-950 font-bold text-center sticky left-0 z-20 min-w-[88px]" rowSpan={2}>
+                  日期
                 </th>
-                <th className="border-b-2 border-r-2 border-amber-300 bg-amber-100 px-4 py-2.5 text-amber-950 font-bold text-left min-w-[100px]" rowSpan={2}>
-                  名稱
+                <th className="border-b border-r-2 border-amber-300 bg-amber-100 px-3 py-2 text-amber-950 font-bold text-center sticky z-20 min-w-[72px]" style={{ left: '88px' }} rowSpan={2}>
+                  類型
                 </th>
-                {dates.length === 0 ? (
-                  <th className="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-gray-500 font-normal text-center">
-                    點「+ 今日」新增
+                {grouped.map(([price, group]) => (
+                  <th key={price} colSpan={group.length}
+                    className="border-b border-r border-amber-300 bg-amber-200 px-3 py-1.5 text-amber-950 font-bold text-center"
+                  >
+                    ${parseInt(price).toLocaleString()}
                   </th>
-                ) : dates.map(date => (
-                  <th key={date} colSpan={3} className="border-b-2 border-r border-amber-300 bg-amber-100 px-2 py-1.5 text-amber-900 font-semibold text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span className="text-xs font-bold">{date}</span>
-                      <button
-                        onClick={() => deleteDate(date)}
-                        className="text-red-400 hover:text-red-600 text-sm font-bold leading-none"
-                        title="刪除此日期"
-                      >×</button>
-                    </div>
+                ))}
+                <th className="border-b border-amber-200 bg-amber-100 w-8" rowSpan={2} />
+              </tr>
+              {/* Row 2: ticket names */}
+              <tr>
+                {tickets.map(t => (
+                  <th key={t.id}
+                    className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-900 font-semibold text-center text-xs min-w-[72px]"
+                  >
+                    {t.name}
                   </th>
                 ))}
               </tr>
-              <tr>
-                {dates.map(date =>
-                  FIELDS.map(f => (
-                    <th key={`${date}-${f.key}`} className="border-b border-r border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-700 font-semibold text-center text-xs min-w-[60px]">
-                      {f.label}
-                    </th>
-                  ))
-                )}
-              </tr>
             </thead>
             <tbody>
-              {grouped.map(([price, priceTickets], gi) =>
-                priceTickets.map((t, ti) => (
-                  <tr key={t.id} className={gi % 2 === 0 ? 'bg-white' : 'bg-amber-50/60'}>
-                    {ti === 0 && (
-                      <td
-                        rowSpan={priceTickets.length}
-                        className="border-b border-r border-amber-200 bg-amber-50 px-3 text-center align-middle sticky left-0 z-10"
+              {dates.length === 0 ? (
+                <tr>
+                  <td colSpan={tickets.length + 3} className="text-center text-gray-500 py-10 text-sm">
+                    此區間無資料，點「+ 今日」新增
+                  </td>
+                </tr>
+              ) : (
+                dates.map((date, di) =>
+                  FIELDS.map((f, fi) => (
+                    <tr key={`${date}-${f.key}`} className={di % 2 === 0 ? 'bg-white' : 'bg-amber-50/50'}>
+                      {/* Date cell — rowspan=3 only on first field row */}
+                      {fi === 0 && (
+                        <td rowSpan={3}
+                          className="border-b-2 border-r border-amber-200 px-3 py-2 text-gray-800 font-semibold text-xs text-center align-middle sticky left-0 z-10 bg-white"
+                        >
+                          {date}
+                        </td>
+                      )}
+                      {/* Field label */}
+                      <td className={`border-r-2 border-amber-200 px-3 py-2 text-gray-700 font-semibold text-xs text-center whitespace-nowrap sticky z-10 ${fi === 2 ? 'border-b-2' : 'border-b border-amber-100'} ${di % 2 === 0 ? 'bg-white' : 'bg-amber-50/50'}`}
+                        style={{ left: '88px' }}
                       >
-                        <span className="font-bold text-amber-950">${parseInt(price).toLocaleString()}</span>
+                        {f.label}
                       </td>
-                    )}
-                    <td className="border-b border-r-2 border-amber-200 px-4 py-2.5 text-gray-900 font-medium whitespace-nowrap">
-                      {t.name}
-                    </td>
-                    {dates.flatMap(date =>
-                      FIELDS.map(f => {
-                        const isEditing =
-                          editing?.date === date &&
-                          editing?.ticketId === t.id &&
-                          editing?.field === f.key
+                      {/* Data cells */}
+                      {tickets.map(t => {
+                        const isEditing = editing?.date === date && editing?.ticketId === t.id && editing?.field === f.key
                         const val = data[`${date}__${t.id}`]?.[f.key] ?? 0
                         return (
-                          <td
-                            key={`${date}-${t.id}-${f.key}`}
-                            className="border-b border-r border-amber-100 text-center p-0"
+                          <td key={t.id}
+                            className={`border-r border-amber-100 text-center p-0 ${fi === 2 ? 'border-b-2 border-amber-200' : 'border-b border-amber-100'}`}
                             onClick={() => !isEditing && startEdit(date, t.id, f.key)}
                           >
                             {isEditing ? (
                               <input
-                                type="number"
-                                min="0"
-                                autoFocus
-                                className="w-full px-1 py-2.5 text-center text-sm focus:outline-none bg-amber-50"
+                                type="number" min="0" autoFocus
+                                className="w-full px-1 py-2 text-center text-sm focus:outline-none bg-amber-50"
                                 value={editing.value}
                                 onChange={e => setEditing(ed => ed ? { ...ed, value: e.target.value } : ed)}
                                 onBlur={() => commitEdit(editing)}
                                 onKeyDown={e => {
                                   if (e.key === 'Escape') { setEditing(null); return }
-                                  if (e.key === 'Enter' || e.key === 'Tab') {
-                                    e.preventDefault()
-                                    commitAndMove(editing, e.shiftKey ? 'left' : 'right')
-                                    return
-                                  }
+                                  if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitAndMove(editing, e.shiftKey ? 'left' : 'right'); return }
                                   if (e.key === 'ArrowRight') { e.preventDefault(); commitAndMove(editing, 'right') }
                                   else if (e.key === 'ArrowLeft') { e.preventDefault(); commitAndMove(editing, 'left') }
                                   else if (e.key === 'ArrowDown') { e.preventDefault(); commitAndMove(editing, 'down') }
@@ -301,16 +269,22 @@ export default function FloorInventoryPage() {
                                 }}
                               />
                             ) : (
-                              <span className={`block px-2 py-2.5 cursor-pointer hover:bg-amber-100 transition-colors ${val > 0 ? 'text-gray-900 font-semibold' : 'text-gray-300'}`}>
+                              <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${val > 0 ? 'text-gray-900 font-semibold' : 'text-gray-300'}`}>
                                 {val}
                               </span>
                             )}
                           </td>
                         )
-                      })
-                    )}
-                  </tr>
-                ))
+                      })}
+                      {/* Delete button — only on first sub-row */}
+                      {fi === 0 && (
+                        <td rowSpan={3} className="border-b-2 border-amber-200 px-1 text-center align-middle bg-white">
+                          <button onClick={() => deleteDate(date)} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )
               )}
             </tbody>
           </table>
