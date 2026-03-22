@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 type Ticket = { id: number; name: string; price: number }
 type CellData = { unopened: number; opened: number; onDisplay: number }
@@ -31,6 +31,7 @@ export default function FloorInventoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<EditingCell>(null)
+  const navigating = useRef(false)
   const [filter, setFilter] = useState(last7Days())
   const [filterInput, setFilterInput] = useState(last7Days())
 
@@ -104,22 +105,69 @@ export default function FloorInventoryPage() {
     setEditing({ date, ticketId, field, value: String(val) })
   }
 
-  const commitEdit = async () => {
-    if (!editing) return
-    const { date, ticketId, field, value } = editing
+  const commitAndMove = (
+    ed: EditingCell,
+    direction?: 'right' | 'left' | 'up' | 'down',
+  ) => {
+    if (!ed) return
+    const { date, ticketId, field, value } = ed
     const num = Math.max(0, parseInt(value) || 0)
-    setEditing(null)
 
+    // Optimistic update + fire-and-forget save
     const key = `${date}__${ticketId}`
-    const current = data[key] ?? { unopened: 0, opened: 0, onDisplay: 0 }
-    const updated = { ...current, [field]: num }
-    setData(prev => ({ ...prev, [key]: updated }))
-
-    await fetch('/api/floor-inventory', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, scratchTicketId: ticketId, ...updated }),
+    setData(prev => {
+      const current = prev[key] ?? { unopened: 0, opened: 0, onDisplay: 0 }
+      const updated = { ...current, [field]: num }
+      fetch('/api/floor-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, scratchTicketId: ticketId, ...updated }),
+      })
+      return { ...prev, [key]: updated }
     })
+
+    if (!direction) {
+      setEditing(null)
+      return
+    }
+
+    // Calculate next cell
+    const dateIndex = dates.indexOf(date)
+    const ticketIndex = tickets.findIndex(t => t.id === ticketId)
+    const fieldIndex = FIELDS.findIndex(f => f.key === field)
+
+    let nd = dateIndex, nt = ticketIndex, nf = fieldIndex
+
+    if (direction === 'right') {
+      nf++
+      if (nf >= FIELDS.length) { nf = 0; nt++ }
+      if (nt >= tickets.length) { nt = tickets.length - 1; nf = FIELDS.length - 1 }
+    } else if (direction === 'left') {
+      nf--
+      if (nf < 0) { nf = FIELDS.length - 1; nt-- }
+      if (nt < 0) { nt = 0; nf = 0 }
+    } else if (direction === 'down') {
+      nd = Math.min(nd + 1, dates.length - 1)
+    } else if (direction === 'up') {
+      nd = Math.max(nd - 1, 0)
+    }
+
+    const nextDate = dates[nd]
+    const nextTicket = tickets[nt]
+    const nextField = FIELDS[nf]
+
+    navigating.current = true
+    setEditing({
+      date: nextDate,
+      ticketId: nextTicket.id,
+      field: nextField.key,
+      value: String(data[`${nextDate}__${nextTicket.id}`]?.[nextField.key] ?? 0),
+    })
+  }
+
+  const commitEdit = (ed: EditingCell) => {
+    if (navigating.current) { navigating.current = false; return }
+    commitAndMove(ed)
   }
 
   if (loading) return <div className="text-amber-700 mt-8 text-center">載入中...</div>
@@ -244,10 +292,18 @@ export default function FloorInventoryPage() {
                                 className="w-full px-1 py-2.5 text-center text-sm focus:outline-none bg-amber-50"
                                 value={editing.value}
                                 onChange={e => setEditing(ed => ed ? { ...ed, value: e.target.value } : ed)}
-                                onBlur={commitEdit}
+                                onBlur={() => commitEdit(editing)}
                                 onKeyDown={e => {
-                                  if (e.key === 'Enter') commitEdit()
-                                  if (e.key === 'Escape') setEditing(null)
+                                  if (e.key === 'Escape') { setEditing(null); return }
+                                  if (e.key === 'Enter' || e.key === 'Tab') {
+                                    e.preventDefault()
+                                    commitAndMove(editing, e.shiftKey ? 'left' : 'right')
+                                    return
+                                  }
+                                  if (e.key === 'ArrowRight') { e.preventDefault(); commitAndMove(editing, 'right') }
+                                  else if (e.key === 'ArrowLeft') { e.preventDefault(); commitAndMove(editing, 'left') }
+                                  else if (e.key === 'ArrowDown') { e.preventDefault(); commitAndMove(editing, 'down') }
+                                  else if (e.key === 'ArrowUp') { e.preventDefault(); commitAndMove(editing, 'up') }
                                 }}
                               />
                             ) : (
