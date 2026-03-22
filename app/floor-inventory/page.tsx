@@ -46,7 +46,7 @@ export default function FloorInventoryPage() {
     const d = await res.json()
     if (d.error) throw new Error(d.error)
 
-    const dateList = Object.keys(d).sort((a, b) => b.localeCompare(a))
+    const dateList = Object.keys(d).sort((a, b) => a.localeCompare(b))
     setDates(dateList)
 
     const map: Record<string, CellData> = {}
@@ -83,7 +83,7 @@ export default function FloorInventoryPage() {
 
   const addDate = (dateStr: string) => {
     if (!dateStr || dates.includes(dateStr)) return
-    setDates(prev => [...prev, dateStr].sort((a, b) => b.localeCompare(a)))
+    setDates(prev => [...prev, dateStr].sort((a, b) => a.localeCompare(b)))
   }
 
   const deleteDate = async (date: string) => {
