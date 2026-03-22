@@ -2,24 +2,29 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  const tickets = await prisma.scratchTicket.findMany({
-    where: { active: true },
-    orderBy: { price: 'asc' },
-    include: {
-      inventoryLogs: {
-        orderBy: { time: 'desc' },
+  try {
+    const tickets = await prisma.scratchTicket.findMany({
+      where: { active: true },
+      orderBy: { price: 'asc' },
+      include: {
+        inventoryLogs: {
+          orderBy: { time: 'desc' },
+        },
       },
-    },
-  })
+    })
 
-  const result = tickets.map((t) => {
-    const stock = t.inventoryLogs.reduce((sum, log) => {
-      return log.type === 'IN' ? sum + log.books : sum - log.books
-    }, 0)
-    return { ...t, stock }
-  })
+    const result = tickets.map((t) => {
+      const stock = t.inventoryLogs.reduce((sum, log) => {
+        return log.type === 'IN' ? sum + log.books : sum - log.books
+      }, 0)
+      return { ...t, stock }
+    })
 
-  return NextResponse.json(result)
+    return NextResponse.json(result)
+  } catch (e) {
+    console.error(e)
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {

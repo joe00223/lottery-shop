@@ -47,9 +47,15 @@ export default function InventoryPage() {
   })
 
   const fetch_ = async () => {
-    const res = await fetch('/api/inventory')
-    setTickets(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch('/api/inventory')
+      const data = await res.json()
+      if (Array.isArray(data)) setTickets(data)
+    } catch (e) {
+      console.error('inventory fetch error', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { fetch_() }, [])
