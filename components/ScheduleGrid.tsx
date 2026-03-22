@@ -247,11 +247,11 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
         <table ref={gridRef} className="border-collapse" style={{ tableLayout: 'fixed', width: 'max-content' }}>
           <thead>
             <tr>
-              <th className="sticky left-0 bg-amber-50 z-10 w-20 min-w-20 border-b border-r border-amber-200 text-xs text-amber-700 font-semibold p-2">
+              <th className="sticky left-0 bg-amber-50 z-10 w-24 min-w-24 border-b border-r border-amber-200 text-sm text-amber-900 font-bold p-2">
                 日期
               </th>
               {hours.map((h) => (
-                <th key={h} className="w-16 min-w-16 border-b border-r border-amber-200 bg-amber-50 text-xs text-amber-700 font-semibold p-2 text-center">
+                <th key={h} className="w-20 min-w-20 border-b border-r border-amber-200 bg-amber-50 text-sm text-amber-900 font-bold p-2 text-center">
                   {String(h).padStart(2, '0')}:00
                 </th>
               ))}
@@ -271,10 +271,10 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                         <td
                           rowSpan={rowCount}
                           className="sticky left-0 bg-amber-50 z-10 border-b-2 border-r border-amber-200 p-1 text-center align-middle"
-                          style={{ width: '80px', minWidth: '80px' }}
+                          style={{ width: '96px', minWidth: '96px' }}
                         >
-                          <div className="text-xs font-bold text-amber-900 leading-tight">{dayName}</div>
-                          <div className="text-xs text-amber-600 leading-tight">{dayDate}</div>
+                          <div className="text-sm font-bold text-amber-900 leading-tight">{dayName}</div>
+                          <div className="text-sm text-amber-700 font-medium leading-tight">{dayDate}</div>
                           {editing && (
                             <div className="flex items-center justify-center gap-1 mt-1.5">
                               <button
@@ -317,7 +317,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                           ) runSpan++
                         }
 
-                        const CELL_W = 64
+                        const CELL_W = 80
 
                         return (
                           <td
@@ -330,7 +330,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                                 : 'bg-white'
                             } ${editing && operating ? 'cursor-crosshair' : ''}`}
                             style={{
-                              height: '38px',
+                              height: '52px',
                               width: `${CELL_W}px`,
                               ...(nextSame && cell.employee && !inDrag ? { borderRightColor: cell.employee.color } : {}),
                             }}
@@ -376,7 +376,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                                     className="absolute top-0 left-0 h-full flex items-center justify-center pointer-events-none z-10"
                                     style={{ width: `${runSpan * CELL_W}px` }}
                                   >
-                                    <span className="text-black text-sm font-bold truncate px-2" style={{ textShadow: '0 0 4px #fff, 0 0 4px #fff, 0 1px 2px #fff' }}>
+                                    <span className="text-black text-base font-bold truncate px-2" style={{ textShadow: '0 0 4px #fff, 0 0 4px #fff, 0 1px 2px #fff' }}>
                                       {cell.employee.name}
                                     </span>
                                   </div>
