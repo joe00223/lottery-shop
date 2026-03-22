@@ -14,13 +14,12 @@ const FIELDS: { key: Field; label: string }[] = [
 ]
 
 function toDateStr(d: Date) {
-  return d.toISOString().split('T')[0]
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(d)
 }
 
 function last7Days() {
   const today = new Date()
-  const from = new Date(today)
-  from.setDate(today.getDate() - 6)
+  const from = new Date(today.getTime() - 6 * 86400000)
   return { from: toDateStr(from), to: toDateStr(today) }
 }
 
