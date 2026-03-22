@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Store {
+  id        Int      @id @default(1)
+  name      String   @default("我的彩券行")
+  hours     Json     @default("{\"0\":{\"open\":\"08:00\",\"close\":\"22:00\"},\"1\":{\"open\":\"08:00\",\"close\":\"22:00\"},\"2\":{\"open\":\"08:00\",\"close\":\"22:00\"},\"3\":{\"open\":\"08:00\",\"close\":\"22:00\"},\"4\":{\"open\":\"08:00\",\"close\":\"22:00\"},\"5\":{\"open\":\"08:00\",\"close\":\"22:00\"},\"6\":{\"open\":\"08:00\",\"close\":\"22:00\"}}")
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id        Int        @id @default(autoincrement())
+  name      String
+  color     String
+  active    Boolean    @default(true)
+  schedules Schedule[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Schedule {
+  id         Int       @id @default(autoincrement())
+  weekStart  DateTime
+  dayOfWeek  Int
+  hour       Int
+  rowIndex   Int       @default(0)
+  employeeId Int?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([weekStart, dayOfWeek, hour, rowIndex])
+}
+
+model ScratchTicket {
+  id           Int      @id @default(autoincrement())
+  name         String
+  price        Int
+  sheetsPerBook Int
+  note         String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
