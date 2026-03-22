@@ -7,6 +7,7 @@ const links = [
   { href: '/', label: '排班表' },
   { href: '/employees', label: '員工管理' },
   { href: '/scratch', label: '刮刮樂' },
+  { href: '/inventory', label: '庫存管理' },
   { href: '/settings', label: '店家設定' },
 ]
 
