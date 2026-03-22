@@ -94,6 +94,7 @@ export default function FloorInventoryPage() {
     setEditing({ date, ticketId, field, value: String(val) })
   }
 
+  // groupTickets for navigation (flat list in price order)
   const commitAndMove = (ed: EditingCell, direction?: 'right' | 'left' | 'up' | 'down') => {
     if (!ed) return
     const { date, ticketId, field, value } = ed
@@ -113,26 +114,26 @@ export default function FloorInventoryPage() {
 
     if (!direction) { setEditing(null); return }
 
-    // rows = dates × fields; columns = tickets
-    const rows = dates.flatMap(d => FIELDS.map(f => ({ date: d, field: f.key as Field })))
-    const rowIdx = rows.findIndex(r => r.date === date && r.field === field)
-    const ticketIdx = tickets.findIndex(t => t.id === ticketId)
+    // cols = tickets × fields; rows = dates
+    const cols = tickets.flatMap(t => FIELDS.map(f => ({ ticketId: t.id, field: f.key as Field })))
+    const colIdx = cols.findIndex(c => c.ticketId === ticketId && c.field === field)
+    const dateIdx = dates.indexOf(date)
 
-    let nr = rowIdx, nt = ticketIdx
-    if (direction === 'right') nt = Math.min(nt + 1, tickets.length - 1)
-    else if (direction === 'left') nt = Math.max(nt - 1, 0)
-    else if (direction === 'down') nr = Math.min(nr + 1, rows.length - 1)
-    else if (direction === 'up') nr = Math.max(nr - 1, 0)
+    let nc = colIdx, nd = dateIdx
+    if (direction === 'right') nc = Math.min(nc + 1, cols.length - 1)
+    else if (direction === 'left') nc = Math.max(nc - 1, 0)
+    else if (direction === 'down') nd = Math.min(nd + 1, dates.length - 1)
+    else if (direction === 'up') nd = Math.max(nd - 1, 0)
 
-    const nextRow = rows[nr]
-    const nextTicket = tickets[nt]
+    const nextCol = cols[nc]
+    const nextDate = dates[nd]
 
     navigating.current = true
     setEditing({
-      date: nextRow.date,
-      ticketId: nextTicket.id,
-      field: nextRow.field,
-      value: String(data[`${nextRow.date}__${nextTicket.id}`]?.[nextRow.field] ?? 0),
+      date: nextDate,
+      ticketId: nextCol.ticketId,
+      field: nextCol.field,
+      value: String(data[`${nextDate}__${nextCol.ticketId}`]?.[nextCol.field] ?? 0),
     })
   }
 
@@ -141,7 +142,6 @@ export default function FloorInventoryPage() {
     commitAndMove(ed)
   }
 
-  // Group tickets by price for column headers
   const grouped = Object.entries(
     tickets.reduce<Record<number, Ticket[]>>((acc, t) => {
       if (!acc[t.price]) acc[t.price] = []
@@ -153,8 +153,41 @@ export default function FloorInventoryPage() {
   if (loading) return <div className="text-amber-800 mt-8 text-center">載入中...</div>
   if (error) return <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-mono break-all">{error}</div>
 
+  const CellInput = ({ date, t, f }: { date: string; t: Ticket; f: typeof FIELDS[number] }) => {
+    const isEditing = editing?.date === date && editing?.ticketId === t.id && editing?.field === f.key
+    const val = data[`${date}__${t.id}`]?.[f.key] ?? 0
+    return (
+      <td className="border-b border-r border-amber-100 text-center p-0"
+        onClick={() => !isEditing && startEdit(date, t.id, f.key)}
+      >
+        {isEditing ? (
+          <input
+            type="number" min="0" autoFocus
+            className="w-full px-1 py-2 text-center text-sm focus:outline-none bg-amber-50"
+            value={editing.value}
+            onChange={e => setEditing(ed => ed ? { ...ed, value: e.target.value } : ed)}
+            onBlur={() => commitEdit(editing)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') { setEditing(null); return }
+              if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitAndMove(editing, e.shiftKey ? 'left' : 'right'); return }
+              if (e.key === 'ArrowRight') { e.preventDefault(); commitAndMove(editing, 'right') }
+              else if (e.key === 'ArrowLeft') { e.preventDefault(); commitAndMove(editing, 'left') }
+              else if (e.key === 'ArrowDown') { e.preventDefault(); commitAndMove(editing, 'down') }
+              else if (e.key === 'ArrowUp') { e.preventDefault(); commitAndMove(editing, 'up') }
+            }}
+          />
+        ) : (
+          <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${val > 0 ? 'text-gray-900 font-semibold' : 'text-gray-300'}`}>
+            {val}
+          </span>
+        )}
+      </td>
+    )
+  }
+
   return (
     <div>
+      {/* Toolbar */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-amber-950">現場庫存</h1>
         <div className="flex items-center gap-2 flex-wrap">
@@ -187,107 +220,76 @@ export default function FloorInventoryPage() {
           請先在「刮刮樂」頁面新增種類
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-amber-200 shadow-sm">
-          <table className="border-collapse text-sm">
-            <thead>
-              {/* Row 1: denomination groups */}
-              <tr>
-                <th className="border-b border-r border-amber-300 bg-amber-100 px-4 py-2 text-amber-950 font-bold text-center sticky left-0 z-20 min-w-[88px]" rowSpan={2}>
-                  日期
-                </th>
-                <th className="border-b border-r-2 border-amber-300 bg-amber-100 px-3 py-2 text-amber-950 font-bold text-center sticky z-20 min-w-[72px]" style={{ left: '88px' }} rowSpan={2}>
-                  類型
-                </th>
-                {grouped.map(([price, group]) => (
-                  <th key={price} colSpan={group.length}
-                    className="border-b border-r border-amber-300 bg-amber-200 px-3 py-1.5 text-amber-950 font-bold text-center"
-                  >
-                    ${parseInt(price).toLocaleString()}
-                  </th>
-                ))}
-                <th className="border-b border-amber-200 bg-amber-100 w-8" rowSpan={2} />
-              </tr>
-              {/* Row 2: ticket names */}
-              <tr>
-                {tickets.map(t => (
-                  <th key={t.id}
-                    className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-900 font-semibold text-center text-xs min-w-[72px]"
-                  >
-                    {t.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {dates.length === 0 ? (
-                <tr>
-                  <td colSpan={tickets.length + 3} className="text-center text-gray-500 py-10 text-sm">
-                    此區間無資料，點「+ 今日」新增
-                  </td>
-                </tr>
-              ) : (
-                dates.map((date, di) =>
-                  FIELDS.map((f, fi) => (
-                    <tr key={`${date}-${f.key}`} className={di % 2 === 0 ? 'bg-white' : 'bg-amber-50/50'}>
-                      {/* Date cell — rowspan=3 only on first field row */}
-                      {fi === 0 && (
-                        <td rowSpan={3}
-                          className="border-b-2 border-r border-amber-200 px-3 py-2 text-gray-800 font-semibold text-xs text-center align-middle sticky left-0 z-10 bg-white"
+        <div className="space-y-6">
+          {grouped.map(([price, priceTickets]) => (
+            <div key={price}>
+              {/* Denomination header */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  ${parseInt(price).toLocaleString()}
+                </span>
+              </div>
+
+              {/* Table for this denomination */}
+              <div className="overflow-x-auto rounded-xl border border-amber-200 shadow-sm">
+                <table className="border-collapse text-sm">
+                  <thead>
+                    {/* Row 1: ticket names */}
+                    <tr>
+                      <th className="border-b border-r border-amber-300 bg-amber-50 px-4 py-2 text-amber-900 font-bold text-left sticky left-0 z-10 min-w-[88px]" rowSpan={2}>
+                        日期
+                      </th>
+                      {priceTickets.map(t => (
+                        <th key={t.id} colSpan={3}
+                          className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-950 font-bold text-center"
                         >
-                          {date}
-                        </td>
-                      )}
-                      {/* Field label */}
-                      <td className={`border-r-2 border-amber-200 px-3 py-2 text-gray-700 font-semibold text-xs text-center whitespace-nowrap sticky z-10 ${fi === 2 ? 'border-b-2' : 'border-b border-amber-100'} ${di % 2 === 0 ? 'bg-white' : 'bg-amber-50/50'}`}
-                        style={{ left: '88px' }}
-                      >
-                        {f.label}
-                      </td>
-                      {/* Data cells */}
-                      {tickets.map(t => {
-                        const isEditing = editing?.date === date && editing?.ticketId === t.id && editing?.field === f.key
-                        const val = data[`${date}__${t.id}`]?.[f.key] ?? 0
-                        return (
-                          <td key={t.id}
-                            className={`border-r border-amber-100 text-center p-0 ${fi === 2 ? 'border-b-2 border-amber-200' : 'border-b border-amber-100'}`}
-                            onClick={() => !isEditing && startEdit(date, t.id, f.key)}
+                          {t.name}
+                        </th>
+                      ))}
+                      <th className="border-b border-amber-200 bg-amber-50 w-8" rowSpan={2} />
+                    </tr>
+                    {/* Row 2: field labels */}
+                    <tr>
+                      {priceTickets.map(t =>
+                        FIELDS.map(f => (
+                          <th key={`${t.id}-${f.key}`}
+                            className="border-b border-r border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-700 font-semibold text-center text-xs min-w-[60px]"
                           >
-                            {isEditing ? (
-                              <input
-                                type="number" min="0" autoFocus
-                                className="w-full px-1 py-2 text-center text-sm focus:outline-none bg-amber-50"
-                                value={editing.value}
-                                onChange={e => setEditing(ed => ed ? { ...ed, value: e.target.value } : ed)}
-                                onBlur={() => commitEdit(editing)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Escape') { setEditing(null); return }
-                                  if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitAndMove(editing, e.shiftKey ? 'left' : 'right'); return }
-                                  if (e.key === 'ArrowRight') { e.preventDefault(); commitAndMove(editing, 'right') }
-                                  else if (e.key === 'ArrowLeft') { e.preventDefault(); commitAndMove(editing, 'left') }
-                                  else if (e.key === 'ArrowDown') { e.preventDefault(); commitAndMove(editing, 'down') }
-                                  else if (e.key === 'ArrowUp') { e.preventDefault(); commitAndMove(editing, 'up') }
-                                }}
-                              />
-                            ) : (
-                              <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${val > 0 ? 'text-gray-900 font-semibold' : 'text-gray-300'}`}>
-                                {val}
-                              </span>
-                            )}
-                          </td>
-                        )
-                      })}
-                      {/* Delete button — only on first sub-row */}
-                      {fi === 0 && (
-                        <td rowSpan={3} className="border-b-2 border-amber-200 px-1 text-center align-middle bg-white">
-                          <button onClick={() => deleteDate(date)} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
-                        </td>
+                            {f.label}
+                          </th>
+                        ))
                       )}
                     </tr>
-                  ))
-                )
-              )}
-            </tbody>
-          </table>
+                  </thead>
+                  <tbody>
+                    {dates.length === 0 ? (
+                      <tr>
+                        <td colSpan={priceTickets.length * 3 + 2}
+                          className="text-center text-gray-500 py-8 text-sm"
+                        >
+                          點「+ 今日」新增日期
+                        </td>
+                      </tr>
+                    ) : (
+                      dates.map((date, i) => (
+                        <tr key={date} className={i % 2 === 0 ? 'bg-white' : 'bg-amber-50/40'}>
+                          <td className="border-b border-r border-amber-200 px-4 py-2 text-gray-800 font-semibold text-xs sticky left-0 bg-white z-10">
+                            {date}
+                          </td>
+                          {priceTickets.map(t =>
+                            FIELDS.map(f => <CellInput key={`${t.id}-${f.key}`} date={date} t={t} f={f} />)
+                          )}
+                          <td className="border-b border-amber-100 px-1 text-center bg-white">
+                            <button onClick={() => deleteDate(date)} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
