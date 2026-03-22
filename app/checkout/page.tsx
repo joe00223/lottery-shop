@@ -100,22 +100,22 @@ export default function CheckoutPage() {
           <table className="border-collapse text-sm w-full">
             <thead>
               <tr className="bg-amber-100">
-                <th className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-700 font-semibold text-center w-28">
+                <th className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-900 font-bold text-center w-28">
                   面額
                 </th>
-                <th className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-700 font-semibold text-left">
+                <th className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-900 font-bold text-left">
                   名稱
                 </th>
-                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-700 font-semibold text-center min-w-20">
+                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-20">
                   昨日檯面
                 </th>
-                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-700 font-semibold text-center min-w-20">
+                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-20">
                   補張數
                 </th>
-                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-700 font-semibold text-center min-w-20">
+                <th className="border-b border-r border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-20">
                   今日檯面
                 </th>
-                <th className="border-b border-amber-200 px-3 py-2.5 text-amber-700 font-semibold text-center min-w-24">
+                <th className="border-b border-amber-200 px-3 py-2.5 text-amber-900 font-bold text-center min-w-24">
                   銷售張數
                 </th>
               </tr>
@@ -138,27 +138,27 @@ export default function CheckoutPage() {
                         <div className="font-bold text-amber-950 text-base">
                           ${priceNum.toLocaleString()}
                         </div>
-                        <div className={`text-sm font-semibold mt-1 ${totalSheets > 0 ? 'text-amber-700' : 'text-amber-300'}`}>
+                        <div className={`text-sm font-semibold mt-1 ${totalSheets > 0 ? 'text-amber-800' : 'text-gray-400'}`}>
                           {totalSheets} 張
                         </div>
-                        <div className={`text-xs mt-0.5 ${totalAmount > 0 ? 'text-amber-600' : 'text-amber-300'}`}>
+                        <div className={`text-xs mt-0.5 ${totalAmount > 0 ? 'text-amber-700' : 'text-gray-400'}`}>
                           ${totalAmount.toLocaleString()}
                         </div>
                       </td>
                     )}
-                    <td className="border-b border-r border-amber-100 px-4 py-2.5 text-amber-900 font-medium">
+                    <td className="border-b border-r border-amber-200 px-4 py-2.5 text-gray-900 font-semibold">
                       {r.name}
                     </td>
-                    <td className="border-b border-r border-amber-100 px-3 py-2.5 text-center text-amber-700">
+                    <td className="border-b border-r border-amber-200 px-3 py-2.5 text-center text-gray-700 font-medium">
                       {r.yesterdayDisplay}
                     </td>
-                    <td className={`border-b border-r border-amber-100 px-3 py-2.5 text-center font-medium ${r.supplement > 0 ? 'text-green-600' : r.supplement < 0 ? 'text-red-400' : 'text-amber-300'}`}>
+                    <td className={`border-b border-r border-amber-100 px-3 py-2.5 text-center font-medium ${r.supplement > 0 ? 'text-green-600' : r.supplement < 0 ? 'text-red-500' : 'text-gray-400'}`}>
                       {r.supplement > 0 ? `+${r.supplement}` : r.supplement}
                     </td>
-                    <td className="border-b border-r border-amber-100 px-3 py-2.5 text-center text-amber-700">
+                    <td className="border-b border-r border-amber-200 px-3 py-2.5 text-center text-gray-700 font-medium">
                       {r.todayDisplay}
                     </td>
-                    <td className={`border-b border-amber-100 px-3 py-2.5 text-center font-bold ${r.sold > 0 ? 'text-amber-950' : 'text-amber-300'}`}>
+                    <td className={`border-b border-amber-100 px-3 py-2.5 text-center font-bold ${r.sold > 0 ? 'text-gray-900' : 'text-gray-400'}`}>
                       {r.sold}
                     </td>
                   </tr>

@@ -92,7 +92,7 @@ export default function EmployeesPage() {
           >
             <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ backgroundColor: emp.color }} />
             <span className="font-medium text-amber-950 flex-1">{emp.name}</span>
-            <span className="text-xs text-amber-400 mr-2">查看時數 →</span>
+            <span className="text-xs text-amber-700 font-medium mr-2">查看時數 →</span>
             <button
               onClick={(e) => { e.stopPropagation(); openEdit(emp) }}
               className="text-sm text-amber-700 hover:underline font-medium"
@@ -108,7 +108,7 @@ export default function EmployeesPage() {
           </div>
         ))}
         {employees.length === 0 && (
-          <div className="text-center text-amber-400 py-12">還沒有員工，先新增員工吧</div>
+          <div className="text-center text-gray-500 py-12">還沒有員工，先新增員工吧</div>
         )}
       </div>
 

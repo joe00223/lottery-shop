@@ -110,7 +110,7 @@ export default function InventoryPage() {
       </div>
 
       {tickets.length === 0 ? (
-        <div className="text-center text-amber-300 py-16 bg-white border border-amber-200 rounded-xl">
+        <div className="text-center text-gray-500 py-16 bg-white border border-amber-200 rounded-xl">
           請先在「刮刮樂」頁面新增種類
         </div>
       ) : (
@@ -120,7 +120,7 @@ export default function InventoryPage() {
             .map(([price, items]) => (
               <div key={price}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-amber-400 text-amber-950 text-xs font-bold px-2.5 py-1 rounded-full">
+                  <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
                     ${parseInt(price).toLocaleString()}
                   </span>
                 </div>
@@ -131,13 +131,13 @@ export default function InventoryPage() {
                       <div className="flex items-center px-4 py-3 gap-4">
                         <div className="flex-1">
                           <div className="font-semibold text-amber-950">{t.name}</div>
-                          <div className="text-xs text-amber-500">{t.sheetsPerBook} 張/本</div>
+                          <div className="text-xs text-gray-600 font-medium">{t.sheetsPerBook} 張/本</div>
                         </div>
                         <div className="text-center">
                           <div className={`text-2xl font-bold ${t.stock > 0 ? 'text-amber-700' : 'text-red-400'}`}>
                             {t.stock}
                           </div>
-                          <div className="text-xs text-amber-400">本</div>
+                          <div className="text-xs text-gray-600 font-medium">本</div>
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -155,7 +155,7 @@ export default function InventoryPage() {
                         </div>
                         <button
                           onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                          className="text-xs text-amber-400 hover:text-amber-600 w-16 text-right"
+                          className="text-xs text-amber-700 hover:text-amber-900 font-medium w-16 text-right"
                         >
                           {expandedId === t.id ? '收起' : `紀錄 ${t.inventoryLogs.length}`}
                         </button>
@@ -164,25 +164,25 @@ export default function InventoryPage() {
                       {/* Log list */}
                       {expandedId === t.id && t.inventoryLogs.length > 0 && (
                         <div className="border-t border-amber-100">
-                          <div className="grid grid-cols-4 px-4 py-2 bg-amber-50 text-xs font-semibold text-amber-600">
+                          <div className="grid grid-cols-4 px-4 py-2 bg-amber-100 text-xs font-bold text-amber-900">
                             <span>類型</span>
                             <span>本數</span>
                             <span>時間</span>
                             <span>備註</span>
                           </div>
-                          <div className="divide-y divide-amber-50">
+                          <div className="divide-y divide-amber-100">
                             {t.inventoryLogs.map((log) => (
                               <div key={log.id} className="grid grid-cols-4 px-4 py-2.5 text-sm items-center">
                                 <span className={`font-semibold ${log.type === 'IN' ? 'text-green-600' : 'text-amber-600'}`}>
                                   {log.type === 'IN' ? '進貨' : '出貨'}
                                 </span>
-                                <span className="text-amber-900">{log.books} 本</span>
-                                <span className="text-amber-500 text-xs">
+                                <span className="text-gray-800 font-medium">{log.books} 本</span>
+                                <span className="text-gray-600 text-xs">
                                   {new Date(log.time).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-amber-400 text-xs truncate">{log.note ?? '—'}</span>
-                                  <button onClick={() => deleteLog(log.id)} className="text-red-300 hover:text-red-500 text-xs ml-2">刪</button>
+                                  <span className="text-gray-500 text-xs truncate">{log.note ?? '—'}</span>
+                                  <button onClick={() => deleteLog(log.id)} className="text-red-400 hover:text-red-600 text-xs font-semibold ml-2">刪</button>
                                 </div>
                               </div>
                             ))}
@@ -190,7 +190,7 @@ export default function InventoryPage() {
                         </div>
                       )}
                       {expandedId === t.id && t.inventoryLogs.length === 0 && (
-                        <div className="border-t border-amber-100 px-4 py-4 text-center text-amber-300 text-sm">
+                        <div className="border-t border-amber-100 px-4 py-4 text-center text-gray-500 text-sm">
                           尚無進出紀錄
                         </div>
                       )}

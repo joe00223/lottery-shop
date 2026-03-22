@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const all = new URL(req.url).searchParams.get('all') === '1'
   const tickets = await prisma.scratchTicket.findMany({
-    where: { active: true },
+    where: all ? undefined : { active: true },
     orderBy: { price: 'asc' },
   })
   return NextResponse.json(tickets)
