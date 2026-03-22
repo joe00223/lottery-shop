@@ -222,25 +222,46 @@ export default function FloorInventoryPage() {
         <div className="overflow-x-auto rounded-xl border border-amber-200 shadow-sm">
           <table className="border-collapse text-sm w-full">
             <thead>
+              {/* Row 1: price denomination groups */}
               <tr>
                 <th
                   className="border-b border-r border-amber-200 bg-amber-50 px-4 py-2.5 text-amber-700 font-semibold text-left sticky left-0 z-10 min-w-28"
-                  rowSpan={2}
+                  rowSpan={3}
                 >
                   日期
                 </th>
+                {Object.entries(
+                  tickets.reduce<Record<number, typeof tickets>>((acc, t) => {
+                    if (!acc[t.price]) acc[t.price] = []
+                    acc[t.price].push(t)
+                    return acc
+                  }, {})
+                )
+                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                  .map(([price, group]) => (
+                    <th
+                      key={price}
+                      colSpan={group.length * 3}
+                      className="border-b border-r border-amber-300 bg-amber-200 px-3 py-1.5 text-amber-950 font-bold text-center"
+                    >
+                      ${parseInt(price).toLocaleString()}
+                    </th>
+                  ))}
+                <th className="border-b border-amber-200 bg-amber-50 w-10" rowSpan={3} />
+              </tr>
+              {/* Row 2: ticket names */}
+              <tr>
                 {tickets.map(t => (
                   <th
                     key={t.id}
                     colSpan={3}
-                    className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-950 font-bold text-center"
+                    className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-900 font-semibold text-center text-xs"
                   >
-                    <div className="text-sm">{t.name}</div>
-                    <div className="text-xs font-normal text-amber-600">${t.price.toLocaleString()}</div>
+                    {t.name}
                   </th>
                 ))}
-                <th className="border-b border-amber-200 bg-amber-50 w-10" rowSpan={2} />
               </tr>
+              {/* Row 3: sub-fields */}
               <tr>
                 {tickets.map(t =>
                   FIELDS.map(f => (
