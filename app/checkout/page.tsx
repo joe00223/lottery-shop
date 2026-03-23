@@ -27,6 +27,8 @@ type Summary = {
   sportsRedemption: number
 }
 
+type ExtraItem = { id: number; name: string; amount: number }
+
 function toTaipeiDateStr(d: Date) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(d)
 }
@@ -43,6 +45,17 @@ export default function CheckoutPage() {
   })
   const [editingKey, setEditingKey] = useState<keyof Summary | null>(null)
   const [editingVal, setEditingVal] = useState('')
+  const [extraItems, setExtraItems] = useState<ExtraItem[]>([])
+  const [knownNames, setKnownNames] = useState<string[]>([])
+  const [newName, setNewName] = useState('')
+  const [newAmount, setNewAmount] = useState('')
+
+  const loadExtras = async (d: string) => {
+    const res = await fetch(`/api/daily-summary-items?date=${d}`)
+    const json = await res.json()
+    setExtraItems(json.items ?? [])
+    setKnownNames(json.names ?? [])
+  }
 
   const load = async (d: string) => {
     setLoading(true)
@@ -56,11 +69,33 @@ export default function CheckoutPage() {
       if (json.error) throw new Error(json.error)
       setData(json)
       setSummary(await summaryRes.json())
+      await loadExtras(d)
     } catch (e) {
       setError(String(e))
     } finally {
       setLoading(false)
     }
+  }
+
+  const addExtra = async () => {
+    const name = newName.trim()
+    const amount = parseInt(newAmount)
+    if (!name || isNaN(amount)) return
+    const res = await fetch('/api/daily-summary-items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, name, amount }),
+    })
+    const item = await res.json()
+    setExtraItems(prev => [...prev, item])
+    if (!knownNames.includes(name)) setKnownNames(prev => [...prev, name].sort())
+    setNewName('')
+    setNewAmount('')
+  }
+
+  const deleteExtra = async (id: number) => {
+    await fetch(`/api/daily-summary-items/${id}`, { method: 'DELETE' })
+    setExtraItems(prev => prev.filter(i => i.id !== id))
   }
 
   useEffect(() => { load(date) }, [])
@@ -309,6 +344,55 @@ export default function CheckoutPage() {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              {/* Extra items */}
+              <div className="mt-4 rounded-xl border border-amber-200 bg-white shadow-sm overflow-hidden">
+                <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+                  <span className="font-bold text-amber-950 text-sm">額外項目</span>
+                  {extraItems.length > 0 && (
+                    <span className={`text-sm font-bold ${extraItems.reduce((s,i)=>s+i.amount,0) >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                      {extraItems.reduce((s,i)=>s+i.amount,0) >= 0 ? '+' : ''}{extraItems.reduce((s,i)=>s+i.amount,0).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div className="divide-y divide-amber-100">
+                  {extraItems.map(item => (
+                    <div key={item.id} className="flex items-center px-4 py-2.5 gap-3">
+                      <span className="flex-1 text-sm text-gray-800">{item.name}</span>
+                      <span className={`text-sm font-semibold ${item.amount >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                        {item.amount >= 0 ? '+' : ''}{item.amount.toLocaleString()}
+                      </span>
+                      <button onClick={() => deleteExtra(item.id)} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                    </div>
+                  ))}
+                  {/* Add row */}
+                  <div className="flex items-center px-4 py-2.5 gap-2">
+                    <datalist id="extra-names">
+                      {knownNames.map(n => <option key={n} value={n} />)}
+                    </datalist>
+                    <input
+                      list="extra-names"
+                      placeholder="項目名稱"
+                      className="flex-1 border border-amber-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      value={newName}
+                      onChange={e => setNewName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') addExtra() }}
+                    />
+                    <input
+                      type="number"
+                      placeholder="金額（負數請打-）"
+                      className="w-36 border border-amber-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      value={newAmount}
+                      onChange={e => setNewAmount(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') addExtra() }}
+                    />
+                    <button
+                      onClick={addExtra}
+                      className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600"
+                    >新增</button>
+                  </div>
+                </div>
               </div>
             )
           })()}

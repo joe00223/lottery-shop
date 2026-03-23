@@ -77,6 +77,14 @@ model DailySummary {
   updatedAt         DateTime @updatedAt
 }
 
+model DailySummaryItem {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  name      String
+  amount    Int
+  createdAt DateTime @default(now())
+}
+
 model ScratchInventoryLog {
   id              Int           @id @default(autoincrement())
   scratchTicketId Int
