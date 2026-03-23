@@ -772,7 +772,7 @@ export default function CheckoutPage() {
 
       <style>{`
         @media print {
-          @page { size: A5 portrait; margin: 12mm 5mm 5mm 28mm; }
+          @page { size: A5 portrait; margin: 4mm; }
           html, body {
             margin: 0 !important;
             padding: 0 !important;
@@ -789,8 +789,9 @@ export default function CheckoutPage() {
           #print-area {
             display: block !important;
             position: absolute;
-            top: 0; left: 0;
-            width: 100%;
+            top: 10mm;
+            left: 26mm;
+            width: 114mm;
             color: #000 !important;
             filter: grayscale(1);
           }
