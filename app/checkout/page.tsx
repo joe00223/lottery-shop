@@ -240,6 +240,16 @@ export default function CheckoutPage() {
   const grandSheets = data ? data.rows.reduce((s, r) => s + r.sold, 0) : 0
   const extraTotal = slots.reduce((s, slot) => { const n = parseInt(slot.amount); return s + (slot.name.trim() && !isNaN(n) ? n : 0) }, 0)
 
+  const lotteryNet = summary.lotterySales - summary.lotteryRedemption
+  const scratchNet = grandTotal - summary.scratchRedemption
+  const sportsNet = summary.sportsSales - summary.sportsRedemption
+  const grandNet = lotteryNet + scratchNet + sportsNet
+  const cashTotal = grandNet + extraTotal
+  const actualCash = summary.cash1000 * 1000 + summary.cash500 * 500 + summary.cash100 * 100 + summary.cashCoins
+  const diff = actualCash - cashTotal
+  const totalRevenue = summary.lotterySales + grandTotal + summary.sportsSales
+  const filledSlots = slots.filter(s => s.name.trim())
+
   const SummaryCell = ({ field }: { field: keyof Summary }) => (
     <input
       type="number" min="0"
@@ -267,6 +277,10 @@ export default function CheckoutPage() {
           />
         </div>
         {data && <span className="text-xs text-amber-500">比較 {data.yesterday} → {data.date}</span>}
+        <button onClick={() => window.print()}
+          className="ml-auto px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-semibold hover:bg-gray-700 print:hidden">
+          列印
+        </button>
       </div>
 
       {error && <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-mono break-all mb-4">{error}</div>}
@@ -344,11 +358,6 @@ export default function CheckoutPage() {
             </div>
 
             {(() => {
-              const scratchNet = grandTotal - summary.scratchRedemption
-              const lotteryNet = summary.lotterySales - summary.lotteryRedemption
-              const sportsNet = summary.sportsSales - summary.sportsRedemption
-              const grandNet = lotteryNet + scratchNet + sportsNet
-              const cashTotal = grandNet + extraTotal
               return (
                 <>
                 <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
@@ -405,9 +414,6 @@ export default function CheckoutPage() {
 
                 {/* 點鈔 */}
                 {(() => {
-                  const actualCash = summary.cash1000 * 1000 + summary.cash500 * 500 + summary.cash100 * 100 + summary.cashCoins
-                  const diff = actualCash - cashTotal
-                  const totalRevenue = summary.lotterySales + grandTotal + summary.sportsSales
                   return (
                     <div className="rounded-xl border border-amber-200 shadow-sm bg-white overflow-hidden">
                       <div className="px-4 py-2 bg-amber-100 border-b border-amber-200 font-bold text-amber-950 text-sm">點鈔</div>
@@ -585,6 +591,150 @@ export default function CheckoutPage() {
 
         </div>
       )}
+
+      {/* ── Print area ── */}
+      {data && (
+        <div id="print-area" style={{ display: 'none' }}>
+          <div style={{ fontFamily: 'sans-serif', fontSize: '11px', color: '#000', lineHeight: 1.4 }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>結帳表</span>
+              <span style={{ fontSize: '13px' }}>{date}</span>
+            </div>
+
+            {/* Scratch ticket results per denomination */}
+            {grouped.map(([price, rows]) => {
+              const orderedRows = getOrderedRows(parseInt(price), rows)
+              const totalSold = rows.reduce((s, r) => s + r.sold, 0)
+              const totalAmt = totalSold * parseInt(price)
+              return (
+                <div key={price} style={{ marginBottom: '6px' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>刮刮樂 ${parseInt(price).toLocaleString()}</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #888' }}>
+                        <th style={{ textAlign: 'left', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>名稱</th>
+                        <th style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>昨日檯面</th>
+                        <th style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>補張數</th>
+                        <th style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>今日檯面</th>
+                        <th style={{ textAlign: 'right', fontWeight: 'bold' }}>銷售</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orderedRows.map(r => (
+                        <tr key={r.id}>
+                          <td style={{ paddingRight: '8px' }}>{r.name}</td>
+                          <td style={{ textAlign: 'right', paddingRight: '8px' }}>{r.yesterdayDisplay}</td>
+                          <td style={{ textAlign: 'right', paddingRight: '8px' }}>{r.supplement > 0 ? `+${r.supplement}` : r.supplement}</td>
+                          <td style={{ textAlign: 'right', paddingRight: '8px' }}>{r.todayDisplay}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{r.sold}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
+                        <td colSpan={4} style={{ paddingTop: '2px' }}>小計</td>
+                        <td style={{ textAlign: 'right', paddingTop: '2px' }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })}
+
+            {/* 彩券/刮刮樂/運彩 */}
+            <div style={{ marginTop: '8px', marginBottom: '6px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #000' }}>
+                    <th></th>
+                    <th style={{ textAlign: 'right', paddingRight: '12px' }}>彩券</th>
+                    <th style={{ textAlign: 'right', paddingRight: '12px' }}>刮刮樂</th>
+                    <th style={{ textAlign: 'right', paddingRight: '12px' }}>運彩</th>
+                    <th style={{ textAlign: 'right' }}>小計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: '銷售', vals: [summary.lotterySales, grandTotal, summary.sportsSales] },
+                    { label: '兌獎', vals: [summary.lotteryRedemption, summary.scratchRedemption, summary.sportsRedemption] },
+                    { label: '淨額', vals: [lotteryNet, scratchNet, sportsNet], bold: true },
+                  ].map(row => (
+                    <tr key={row.label} style={row.bold ? { borderTop: '1px solid #888', fontWeight: 'bold' } : {}}>
+                      <td style={{ color: '#444' }}>{row.label}</td>
+                      {row.vals.map((v, i) => <td key={i} style={{ textAlign: 'right', paddingRight: '12px' }}>{v.toLocaleString()}</td>)}
+                      <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{row.vals.reduce((a, b) => a + b, 0).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 額外項目 */}
+            {filledSlots.length > 0 && (
+              <div style={{ marginBottom: '6px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '2px', borderBottom: '1px solid #888' }}>額外項目</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+                  {filledSlots.map((s, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{s.name}</span>
+                      <span style={{ fontWeight: 'bold' }}>{parseInt(s.amount) > 0 ? '+' : ''}{parseInt(s.amount).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', fontWeight: 'bold', borderTop: '1px solid #888', marginTop: '2px' }}>
+                  <span>小計 {extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            {/* 應有現金 / 點鈔 / 差異 */}
+            <div style={{ borderTop: '2px solid #000', paddingTop: '6px', marginTop: '4px' }}>
+              <table style={{ width: '100%', fontSize: '11px' }}>
+                <tbody>
+                  <tr>
+                    <td>應有現金</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{cashTotal.toLocaleString()}</td>
+                    <td style={{ paddingLeft: '16px', color: '#444' }}>點鈔</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {summary.cash1000 > 0 && `1000×${summary.cash1000}  `}
+                      {summary.cash500 > 0 && `500×${summary.cash500}  `}
+                      {summary.cash100 > 0 && `100×${summary.cash100}  `}
+                      {summary.cashCoins > 0 && `銅板${summary.cashCoins}`}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>實際現金</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{actualCash.toLocaleString()}</td>
+                    <td style={{ paddingLeft: '16px' }}>差異</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{diff > 0 ? '+' : ''}{diff.toLocaleString()}</td>
+                  </tr>
+                  <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold', fontSize: '13px' }}>
+                    <td colSpan={2} style={{ paddingTop: '4px' }}>總營業額</td>
+                    <td colSpan={2} style={{ textAlign: 'right', paddingTop: '4px' }}>{totalRevenue.toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @media print {
+          @page { size: A5 portrait; margin: 8mm; }
+          body * { visibility: hidden !important; }
+          #print-area, #print-area * { visibility: visible !important; }
+          #print-area {
+            display: block !important;
+            position: fixed;
+            top: 0; left: 0;
+            width: 148mm;
+            filter: grayscale(1);
+            color: #000 !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
