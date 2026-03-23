@@ -247,11 +247,11 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
         <table ref={gridRef} className="border-collapse" style={{ tableLayout: 'fixed', width: 'max-content' }}>
           <thead>
             <tr>
-              <th className="sticky left-0 bg-amber-50 z-10 w-24 min-w-24 border-b border-r border-amber-200 text-sm text-amber-900 font-bold p-2">
+              <th className="sticky left-0 bg-amber-100 z-10 w-24 min-w-24 border-b-2 border-r border-amber-300 text-sm text-amber-900 font-bold p-2">
                 日期
               </th>
               {hours.map((h) => (
-                <th key={h} className="w-20 min-w-20 border-b border-r border-amber-200 bg-amber-50 text-sm text-amber-900 font-bold p-2 text-center">
+                <th key={h} className="w-20 min-w-20 border-b-2 border-r border-amber-200 bg-amber-100 text-sm text-amber-900 font-bold p-2 text-center">
                   {String(h).padStart(2, '0')}:00
                 </th>
               ))}
@@ -270,7 +270,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                       {rowIndex === 0 && (
                         <td
                           rowSpan={rowCount}
-                          className="sticky left-0 bg-amber-50 z-10 border-b-2 border-r border-amber-200 p-1 text-center align-middle"
+                          className="sticky left-0 bg-amber-50 z-10 border-b-2 border-r border-amber-300 p-1 text-center align-middle"
                           style={{ width: '96px', minWidth: '96px' }}
                         >
                           <div className="text-sm font-bold text-amber-900 leading-tight">{dayName}</div>
@@ -322,12 +322,12 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                         return (
                           <td
                             key={h}
-                            className={`border-b border-r border-amber-100 p-0 relative ${
+                            className={`border-b border-r p-0 relative ${
                               !operating
-                                ? 'bg-amber-50'
+                                ? 'bg-amber-50 border-amber-200'
                                 : inDrag
-                                ? 'bg-amber-200'
-                                : 'bg-white'
+                                ? 'bg-amber-200 border-amber-300'
+                                : 'bg-white border-amber-100'
                             } ${editing && operating ? 'cursor-crosshair' : ''}`}
                             style={{
                               height: '52px',

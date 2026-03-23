@@ -99,31 +99,45 @@ export default function EmployeeDetailPage() {
 
       {/* Shift log */}
       <div className="bg-white border border-amber-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-amber-100">
-          <span className="text-sm font-bold text-amber-950">班次紀錄</span>
-        </div>
         {loading ? (
           <div className="text-center text-amber-400 text-sm py-8">載入中...</div>
         ) : shifts.length === 0 ? (
           <div className="text-center text-amber-300 text-sm py-8">此時段內無排班紀錄</div>
         ) : (
-          <div className="divide-y divide-amber-50">
-            {shifts.map((s, i) => (
-              <div key={i} className="flex items-center px-4 py-3 gap-4">
-                <div className="w-14 text-sm font-semibold text-amber-900">{s.date}</div>
-                <div className="w-8 text-xs text-amber-500">{s.dayName}</div>
-                <div className="flex-1 text-sm text-amber-800">
-                  {s.startTime} – {s.endTime}
-                </div>
-                <div
-                  className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: employee.color }}
-                >
-                  {s.hours}h
-                </div>
-              </div>
-            ))}
-          </div>
+          <table className="border-collapse text-sm w-full">
+            <thead>
+              <tr className="bg-amber-100">
+                <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-900 font-bold text-left">日期</th>
+                <th className="border-b border-r border-amber-200 px-3 py-2 text-amber-900 font-bold text-center w-10">星期</th>
+                <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-900 font-bold text-left">時段</th>
+                <th className="border-b border-amber-200 px-4 py-2 text-amber-900 font-bold text-center">時數</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shifts.map((s, i) => (
+                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-amber-50/40'}>
+                  <td className="border-b border-r border-amber-100 px-4 py-2.5 font-semibold text-amber-900">{s.date}</td>
+                  <td className="border-b border-r border-amber-100 px-3 py-2.5 text-center text-amber-500 text-xs">{s.dayName}</td>
+                  <td className="border-b border-r border-amber-100 px-4 py-2.5 text-amber-800">{s.startTime} – {s.endTime}</td>
+                  <td className="border-b border-amber-100 px-4 py-2.5 text-center">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: employee.color }}>
+                      {s.hours}h
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-amber-50 border-t-2 border-amber-300">
+                <td colSpan={3} className="px-4 py-2 text-amber-800 font-semibold text-sm">{shifts.length} 筆班次</td>
+                <td className="px-4 py-2 text-center">
+                  <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: employee.color }}>
+                    {totalHours}h
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         )}
       </div>
     </div>

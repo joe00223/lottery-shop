@@ -201,14 +201,15 @@ export default function FloorInventoryPage() {
   const CellInput = ({ date, t, f }: { date: string; t: Ticket; f: typeof FIELDS[number] }) => {
     const isEditing = editing?.date === date && editing?.ticketId === t.id && editing?.field === f.key
     const val = data[`${date}__${t.id}`]?.[f.key] ?? 0
+    const isLast = f.key === FIELDS[FIELDS.length - 1].key
     return (
-      <td className="border-b border-r border-amber-100 text-center p-0"
+      <td className={`border-b text-center p-0 ${isLast ? 'border-r border-amber-300' : 'border-r border-amber-100'}`}
         onClick={() => !isEditing && startEdit(date, t.id, f.key)}
       >
         {isEditing ? (
           <input
             type="number" min="0" autoFocus
-            className="w-full px-1 py-2 text-center text-sm focus:outline-none bg-amber-50"
+            className="w-full px-1 py-2 text-center text-sm focus:outline-none bg-amber-100"
             value={editing.value}
             onChange={e => setEditing(ed => ed ? { ...ed, value: e.target.value } : ed)}
             onBlur={() => commitEdit(editing)}
@@ -222,7 +223,7 @@ export default function FloorInventoryPage() {
             }}
           />
         ) : (
-          <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${val > 0 ? 'text-gray-900 font-semibold' : 'text-gray-300'}`}>
+          <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${val > 0 ? 'text-gray-800 font-semibold' : 'text-gray-300'}`}>
             {val}
           </span>
         )}
@@ -283,7 +284,7 @@ export default function FloorInventoryPage() {
                   <table className="border-collapse text-sm">
                     <thead>
                       <tr>
-                        <th className="border-b border-r border-amber-300 bg-amber-50 px-4 py-2 text-amber-900 font-bold text-left sticky left-0 z-10 min-w-[88px]" rowSpan={2}>
+                        <th className="border-b-2 border-r border-amber-300 bg-amber-100 px-4 py-2 text-amber-900 font-bold text-left sticky left-0 z-10 min-w-[96px]" rowSpan={2}>
                           日期
                         </th>
                         {orderedTickets.map(t => (
@@ -293,7 +294,7 @@ export default function FloorInventoryPage() {
                             onDragOver={e => handleDragOver(e, t.id)}
                             onDrop={() => handleDrop(parseInt(price), t.id)}
                             onDragEnd={handleDragEnd}
-                            className={`border-b border-r border-amber-200 px-3 py-1.5 text-amber-950 font-bold text-center select-none cursor-grab active:cursor-grabbing transition-colors ${
+                            className={`border-b border-r border-amber-300 px-3 py-2 text-amber-950 font-bold text-center select-none cursor-grab active:cursor-grabbing transition-colors ${
                               dragKey?.ticketId === t.id ? 'opacity-40 bg-amber-50' :
                               dragOverId === t.id && dragKey?.price === parseInt(price) ? 'bg-amber-300' :
                               'bg-amber-100'
@@ -306,9 +307,9 @@ export default function FloorInventoryPage() {
                       </tr>
                       <tr>
                         {orderedTickets.map(t =>
-                          FIELDS.map(f => (
+                          FIELDS.map((f, fi) => (
                             <th key={`${t.id}-${f.key}`}
-                              className="border-b border-r border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-700 font-semibold text-center text-xs min-w-[60px]"
+                              className={`border-b-2 border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-700 font-semibold text-center text-xs min-w-[64px] ${fi < FIELDS.length - 1 ? 'border-r border-amber-200' : 'border-r border-amber-300'}`}
                             >
                               {f.label}
                             </th>
@@ -325,15 +326,15 @@ export default function FloorInventoryPage() {
                         </tr>
                       ) : (
                         dates.map((date, i) => (
-                          <tr key={date} className={i % 2 === 0 ? 'bg-white' : 'bg-amber-50/40'}>
-                            <td className="border-b border-r border-amber-200 px-4 py-2 text-gray-800 font-semibold text-xs sticky left-0 bg-white z-10">
+                          <tr key={date} className={i % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'}>
+                            <td className="border-b border-r border-amber-200 px-4 py-2 text-gray-800 font-semibold text-xs sticky left-0 bg-inherit z-10 whitespace-nowrap">
                               {date}
                             </td>
                             {orderedTickets.map(t =>
                               FIELDS.map(f => <CellInput key={`${t.id}-${f.key}`} date={date} t={t} f={f} />)
                             )}
-                            <td className="border-b border-amber-100 px-1 text-center bg-white">
-                              <button onClick={() => deleteDate(date)} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                            <td className="border-b border-amber-100 px-1 text-center">
+                              <button onClick={() => deleteDate(date)} className="text-red-300 hover:text-red-600 text-xs font-bold">×</button>
                             </td>
                           </tr>
                         ))

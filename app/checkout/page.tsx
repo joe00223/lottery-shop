@@ -353,124 +353,132 @@ export default function CheckoutPage() {
               )
             })}
 
-            <div className="rounded-xl border border-amber-300 bg-amber-50 px-6 py-4 flex items-center gap-6">
-              <span className="font-bold text-amber-950 text-base">總計</span>
-              <span className="font-bold text-amber-950">{grandSheets} 張</span>
-              <span className="text-amber-700 font-semibold">${grandTotal.toLocaleString()}</span>
+            {/* 刮刮樂總計 */}
+            <div className="rounded-xl border border-amber-300 overflow-hidden">
+              <table className="border-collapse text-sm w-full">
+                <tbody>
+                  <tr className="bg-amber-50">
+                    <td className="border-r border-amber-300 px-4 py-2.5 font-bold text-amber-950">刮刮樂總計</td>
+                    <td className="border-r border-amber-200 px-4 py-2.5 text-center font-bold text-amber-950">{grandSheets} 張</td>
+                    <td className="px-4 py-2.5 text-center font-semibold text-amber-700">${grandTotal.toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            {(() => {
-              return (
-                <>
-                <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
-                  <table className="border-collapse text-sm w-full">
-                    <thead>
-                      <tr className="bg-amber-100">
-                        <th colSpan={2} className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">彩券</th>
-                        <th colSpan={2} className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">刮刮樂</th>
-                        <th colSpan={2} className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">運彩</th>
-                        <th className="border-b border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">總計</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="bg-white">
-                        <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">銷售</td>
-                        <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="lotterySales" /></td>
-                        <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">銷售</td>
-                        <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right font-semibold text-gray-900">{grandTotal.toLocaleString()}</td>
-                        <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">銷售</td>
-                        <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="sportsSales" /></td>
-                        <td className="border-b border-amber-100 px-4 py-2.5 text-center" rowSpan={3}><NetVal v={grandNet} /></td>
-                      </tr>
-                      <tr className="bg-amber-50/40">
-                        <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">兌獎</td>
-                        <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="lotteryRedemption" /></td>
-                        <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">兌獎</td>
-                        <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="scratchRedemption" /></td>
-                        <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">兌獎</td>
-                        <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="sportsRedemption" /></td>
-                      </tr>
-                      <tr className="bg-white">
-                        <td className="border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">總計</td>
-                        <td className="border-r border-amber-200 px-3 py-2.5 text-right"><NetVal v={lotteryNet} /></td>
-                        <td className="border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">總計</td>
-                        <td className="border-r border-amber-200 px-3 py-2.5 text-right"><NetVal v={scratchNet} /></td>
-                        <td className="border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">總計</td>
-                        <td className="border-r border-amber-200 px-3 py-2.5 text-right"><NetVal v={sportsNet} /></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+            {/* 銷售/兌獎/淨額 + 應有現金 */}
+            <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+              <table className="border-collapse text-sm w-full">
+                <thead>
+                  <tr className="bg-amber-100">
+                    <th className="border-b border-r border-amber-300 px-4 py-2 text-amber-900 font-bold text-left w-16"></th>
+                    <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">彩券</th>
+                    <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">刮刮樂</th>
+                    <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">運彩</th>
+                    <th className="border-b border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">小計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-white">
+                    <td className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-800 font-semibold text-xs">銷售</td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2 text-right"><SummaryCell field="lotterySales" /></td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2.5 text-right font-semibold text-gray-900">{grandTotal.toLocaleString()}</td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2 text-right"><SummaryCell field="sportsSales" /></td>
+                    <td className="border-b border-amber-100 px-3 py-2.5 text-right font-semibold text-gray-700">{(summary.lotterySales + grandTotal + summary.sportsSales).toLocaleString()}</td>
+                  </tr>
+                  <tr className="bg-amber-50/40">
+                    <td className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-800 font-semibold text-xs">兌獎</td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2 text-right"><SummaryCell field="lotteryRedemption" /></td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2 text-right"><SummaryCell field="scratchRedemption" /></td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2 text-right"><SummaryCell field="sportsRedemption" /></td>
+                    <td className="border-b border-amber-100 px-3 py-2.5 text-right font-semibold text-gray-700">{(summary.lotteryRedemption + summary.scratchRedemption + summary.sportsRedemption).toLocaleString()}</td>
+                  </tr>
+                  <tr className="bg-white">
+                    <td className="border-b border-r border-amber-200 px-4 py-2.5 text-amber-800 font-semibold text-xs">淨額</td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2.5 text-right"><NetVal v={lotteryNet} /></td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2.5 text-right"><NetVal v={scratchNet} /></td>
+                    <td className="border-b border-r border-amber-100 px-3 py-2.5 text-right"><NetVal v={sportsNet} /></td>
+                    <td className="border-b border-amber-100 px-3 py-2.5 text-right"><NetVal v={grandNet} /></td>
+                  </tr>
+                  <tr className="bg-amber-50/60">
+                    <td className="border-r border-amber-200 px-4 py-2.5 text-amber-800 font-bold text-xs whitespace-nowrap">應有現金</td>
+                    <td colSpan={3} className="border-r border-amber-100 px-3 py-2.5 text-right text-sm text-amber-700">
+                      <span>淨額 <strong className={grandNet >= 0 ? 'text-gray-900' : 'text-red-600'}>{grandNet.toLocaleString()}</strong></span>
+                      <span className="mx-2 text-amber-400">＋</span>
+                      <span>額外 <strong className={extraTotal >= 0 ? 'text-gray-900' : 'text-red-600'}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</strong></span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      <span className={`text-xl font-bold ${cashTotal >= 0 ? 'text-amber-950' : 'text-red-600'}`}>{cashTotal.toLocaleString()}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-                {/* 應有現金 */}
-                <div className="rounded-xl border-2 border-amber-400 bg-amber-50 px-6 py-4 flex items-center gap-3 flex-wrap">
-                  <span className="text-sm text-amber-800 font-medium">總計</span>
-                  <span className={`font-bold ${grandNet >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{grandNet.toLocaleString()}</span>
-                  <span className="text-amber-400">＋</span>
-                  <span className="text-sm text-amber-800 font-medium">額外項目</span>
-                  <span className={`font-bold ${extraTotal >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</span>
-                  <span className="text-amber-400">＝</span>
-                  <span className="text-sm text-amber-900 font-bold">應有現金</span>
-                  <span className={`text-2xl font-bold ${cashTotal >= 0 ? 'text-amber-950' : 'text-red-600'}`}>{cashTotal.toLocaleString()}</span>
-                </div>
-
-                {/* 點鈔 */}
-                {(() => {
-                  return (
-                    <div className="rounded-xl border border-amber-200 shadow-sm bg-white overflow-hidden">
-                      <div className="px-4 py-2 bg-amber-100 border-b border-amber-200 font-bold text-amber-950 text-sm">點鈔</div>
-                      <div className="px-4 py-3 space-y-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {([['cash1000', 1000], ['cash500', 500], ['cash100', 100]] as [keyof Summary, number][]).map(([field, denom]) => (
-                            <div key={field} className="flex items-center gap-1.5">
-                              <span className="text-sm font-semibold text-amber-900">{denom.toLocaleString()}×</span>
-                              <input
-                                type="number" min="0"
-                                className="w-16 text-sm px-2 py-1 text-center border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-                                value={getSummaryVal(field)}
-                                onChange={e => setSummaryEdits(prev => ({ ...prev, [field]: e.target.value }))}
-                                onBlur={() => commitSummaryField(field)}
-                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                              />
-                              <span className="text-xs text-gray-500">張</span>
-                            </div>
-                          ))}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-semibold text-amber-900">銅板</span>
-                            <input
-                              type="number" min="0"
-                              className="w-20 text-sm px-2 py-1 text-center border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-                              value={getSummaryVal('cashCoins')}
-                              onChange={e => setSummaryEdits(prev => ({ ...prev, cashCoins: e.target.value }))}
-                              onBlur={() => commitSummaryField('cashCoins')}
-                              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                            />
-                            <span className="text-xs text-gray-500">元</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 flex-wrap border-t border-amber-100 pt-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-amber-800">實際現金</span>
-                            <span className="font-bold text-gray-900">{actualCash.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-amber-800">差異</span>
-                            <span className={`font-bold text-lg ${diff === 0 ? 'text-gray-400' : diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {diff > 0 ? '+' : ''}{diff.toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 ml-auto">
-                            <span className="text-sm font-bold text-amber-900">總營業額</span>
-                            <span className="font-bold text-xl text-amber-950">{totalRevenue.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
-                </>
-              )
-            })()}
+            {/* 點鈔 */}
+            <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+              <table className="border-collapse text-sm w-full">
+                <thead>
+                  <tr className="bg-amber-100">
+                    <th className="border-b border-r border-amber-300 px-4 py-2 text-amber-900 font-bold text-left">點鈔</th>
+                    <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">1000</th>
+                    <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">500</th>
+                    <th className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">100</th>
+                    <th className="border-b border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">銅板</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-white">
+                    <td className="border-b border-r border-amber-200 px-4 py-2 text-amber-800 font-semibold text-xs">張數</td>
+                    {(['cash1000', 'cash500', 'cash100'] as const).map(field => (
+                      <td key={field} className="border-b border-r border-amber-100 px-2 py-1.5 text-center">
+                        <input
+                          type="number" min="0"
+                          className="w-20 text-sm px-2 py-1 text-center border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                          value={getSummaryVal(field)}
+                          onChange={e => setSummaryEdits(prev => ({ ...prev, [field]: e.target.value }))}
+                          onBlur={() => commitSummaryField(field)}
+                          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                        />
+                      </td>
+                    ))}
+                    <td className="border-b border-amber-100 px-2 py-1.5 text-center">
+                      <input
+                        type="number" min="0"
+                        className="w-20 text-sm px-2 py-1 text-center border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                        value={getSummaryVal('cashCoins')}
+                        onChange={e => setSummaryEdits(prev => ({ ...prev, cashCoins: e.target.value }))}
+                        onBlur={() => commitSummaryField('cashCoins')}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                      />
+                    </td>
+                  </tr>
+                  <tr className="bg-amber-50/40">
+                    <td className="border-r border-amber-200 px-4 py-2.5 text-amber-800 font-semibold text-xs">金額</td>
+                    <td className="border-r border-amber-100 px-3 py-2.5 text-center font-semibold text-gray-700">{(summary.cash1000 * 1000).toLocaleString()}</td>
+                    <td className="border-r border-amber-100 px-3 py-2.5 text-center font-semibold text-gray-700">{(summary.cash500 * 500).toLocaleString()}</td>
+                    <td className="border-r border-amber-100 px-3 py-2.5 text-center font-semibold text-gray-700">{(summary.cash100 * 100).toLocaleString()}</td>
+                    <td className="px-3 py-2.5 text-center text-xs text-amber-500">（直接填金額）</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr className="bg-amber-50 border-t-2 border-amber-300">
+                    <td className="border-r border-amber-200 px-4 py-2.5 font-bold text-amber-900 text-xs">實際現金</td>
+                    <td colSpan={2} className="border-r border-amber-100 px-3 py-2.5">
+                      <span className="font-bold text-gray-900 text-base">{actualCash.toLocaleString()}</span>
+                      <span className="ml-3 text-sm text-amber-700">差異</span>
+                      <span className={`ml-1.5 font-bold text-base ${diff === 0 ? 'text-gray-400' : diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {diff > 0 ? '+' : ''}{diff.toLocaleString()}
+                      </span>
+                    </td>
+                    <td colSpan={2} className="px-3 py-2.5 text-right">
+                      <span className="text-xs text-amber-700 mr-2">總營業額</span>
+                      <span className="font-bold text-xl text-amber-950">{totalRevenue.toLocaleString()}</span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
 
           {/* Right: extra items panel */}
@@ -597,12 +605,12 @@ export default function CheckoutPage() {
       {/* ── Print area ── */}
       {data && (
         <div id="print-area" style={{ display: 'none' }}>
-          <div style={{ fontFamily: 'sans-serif', fontSize: '11px', color: '#000', lineHeight: 1.4 }}>
+          <div style={{ fontFamily: 'sans-serif', fontSize: '9px', color: '#000', lineHeight: 1.3 }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>結帳表</span>
-              <span style={{ fontSize: '13px' }}>{date}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '3px', marginBottom: '5px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>結帳表</span>
+              <span style={{ fontSize: '11px' }}>{date}</span>
             </div>
 
             {/* Scratch ticket results per denomination */}
@@ -611,31 +619,29 @@ export default function CheckoutPage() {
               const totalSold = rows.reduce((s, r) => s + r.sold, 0)
               const totalAmt = totalSold * parseInt(price)
               return (
-                <div key={price} style={{ marginBottom: '6px' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>刮刮樂 ${parseInt(price).toLocaleString()}</div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                <div key={price} style={{ marginBottom: '5px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #888' }}>
-                        <th style={{ textAlign: 'left', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>名稱</th>
-                        <th style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>昨日檯面</th>
-                        <th style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>補張數</th>
-                        <th style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'normal', color: '#444' }}>今日檯面</th>
-                        <th style={{ textAlign: 'right', fontWeight: 'bold' }}>銷售</th>
+                      <tr style={{ borderBottom: '1px solid #000' }}>
+                        <th colSpan={orderedRows.length + 1} style={{ textAlign: 'left', fontWeight: 'bold', paddingBottom: '1px' }}>
+                          刮刮樂 ${parseInt(price).toLocaleString()}
+                        </th>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #aaa' }}>
+                        <th style={{ textAlign: 'left', color: '#555', fontWeight: 'normal', paddingRight: '4px', width: '30px' }}></th>
+                        {orderedRows.map(r => (
+                          <th key={r.id} style={{ textAlign: 'center', color: '#333', fontWeight: 'bold', paddingRight: '4px' }}>{r.name}</th>
+                        ))}
+                        <th style={{ textAlign: 'right', fontWeight: 'bold' }}>小計</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {orderedRows.map(r => (
-                        <tr key={r.id}>
-                          <td style={{ paddingRight: '8px' }}>{r.name}</td>
-                          <td style={{ textAlign: 'right', paddingRight: '8px' }}>{r.yesterdayDisplay}</td>
-                          <td style={{ textAlign: 'right', paddingRight: '8px' }}>{r.supplement > 0 ? `+${r.supplement}` : r.supplement}</td>
-                          <td style={{ textAlign: 'right', paddingRight: '8px' }}>{r.todayDisplay}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{r.sold}</td>
-                        </tr>
-                      ))}
-                      <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
-                        <td colSpan={4} style={{ paddingTop: '2px' }}>小計</td>
-                        <td style={{ textAlign: 'right', paddingTop: '2px' }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
+                      <tr style={{ borderBottom: '1px solid #ddd' }}>
+                        <td style={{ color: '#555', paddingRight: '4px' }}>銷售</td>
+                        {orderedRows.map(r => (
+                          <td key={r.id} style={{ textAlign: 'center', fontWeight: r.sold > 0 ? 'bold' : 'normal', color: r.sold > 0 ? '#000' : '#999' }}>{r.sold}</td>
+                        ))}
+                        <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -644,77 +650,108 @@ export default function CheckoutPage() {
             })}
 
             {/* 彩券/刮刮樂/運彩 */}
-            <div style={{ marginTop: '8px', marginBottom: '6px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+            <div style={{ marginTop: '5px', marginBottom: '4px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #000' }}>
-                    <th></th>
-                    <th style={{ textAlign: 'right', paddingRight: '12px' }}>彩券</th>
-                    <th style={{ textAlign: 'right', paddingRight: '12px' }}>刮刮樂</th>
-                    <th style={{ textAlign: 'right', paddingRight: '12px' }}>運彩</th>
-                    <th style={{ textAlign: 'right' }}>小計</th>
+                    <th style={{ textAlign: 'left', paddingRight: '8px', width: '32px' }}></th>
+                    <th style={{ textAlign: 'right', paddingRight: '8px' }}>彩券</th>
+                    <th style={{ textAlign: 'right', paddingRight: '8px' }}>刮刮樂</th>
+                    <th style={{ textAlign: 'right', paddingRight: '8px' }}>運彩</th>
+                    <th style={{ textAlign: 'right', fontWeight: 'bold' }}>小計</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { label: '銷售', vals: [summary.lotterySales, grandTotal, summary.sportsSales] },
-                    { label: '兌獎', vals: [summary.lotteryRedemption, summary.scratchRedemption, summary.sportsRedemption] },
-                    { label: '淨額', vals: [lotteryNet, scratchNet, sportsNet], bold: true },
-                  ].map(row => (
-                    <tr key={row.label} style={row.bold ? { borderTop: '1px solid #888', fontWeight: 'bold' } : {}}>
-                      <td style={{ color: '#444' }}>{row.label}</td>
-                      {row.vals.map((v, i) => <td key={i} style={{ textAlign: 'right', paddingRight: '12px' }}>{v.toLocaleString()}</td>)}
+                  {([
+                    { label: '銷售', vals: [summary.lotterySales, grandTotal, summary.sportsSales] as number[], bold: false },
+                    { label: '兌獎', vals: [summary.lotteryRedemption, summary.scratchRedemption, summary.sportsRedemption] as number[], bold: false },
+                    { label: '淨額', vals: [lotteryNet, scratchNet, sportsNet] as number[], bold: true },
+                  ]).map(row => (
+                    <tr key={row.label} style={row.bold ? { borderTop: '1px solid #aaa', fontWeight: 'bold' } : { borderBottom: '1px solid #eee' }}>
+                      <td style={{ color: '#555', paddingRight: '8px' }}>{row.label}</td>
+                      {row.vals.map((v, i) => <td key={i} style={{ textAlign: 'right', paddingRight: '8px' }}>{v.toLocaleString()}</td>)}
                       <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{row.vals.reduce((a, b) => a + b, 0).toLocaleString()}</td>
                     </tr>
                   ))}
+                  <tr style={{ borderTop: '1px solid #aaa', background: '#f9f9f9' }}>
+                    <td style={{ color: '#555', paddingRight: '8px', paddingTop: '2px' }}>應有</td>
+                    <td colSpan={3} style={{ textAlign: 'right', paddingRight: '8px', paddingTop: '2px', color: '#555' }}>
+                      淨額 {grandNet.toLocaleString()} ＋ 額外 {extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: '2px' }}>{cashTotal.toLocaleString()}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
             {/* 額外項目 */}
             {filledSlots.length > 0 && (
-              <div style={{ marginBottom: '6px' }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '2px', borderBottom: '1px solid #888' }}>額外項目</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-                  {filledSlots.map((s, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>{s.name}</span>
-                      <span style={{ fontWeight: 'bold' }}>{parseInt(s.amount) > 0 ? '+' : ''}{parseInt(s.amount).toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', fontWeight: 'bold', borderTop: '1px solid #888', marginTop: '2px' }}>
-                  <span>小計 {extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</span>
-                </div>
+              <div style={{ marginBottom: '4px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #000' }}>
+                      <th style={{ textAlign: 'left', fontWeight: 'bold' }}>額外項目</th>
+                      <th style={{ textAlign: 'right', fontWeight: 'bold' }}>金額</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filledSlots.map((s, i) => {
+                      const amt = parseInt(s.amount) || 0
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ paddingRight: '8px' }}>{s.name}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
+                      <td>小計</td>
+                      <td style={{ textAlign: 'right' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             )}
 
-            {/* 應有現金 / 點鈔 / 差異 */}
-            <div style={{ borderTop: '2px solid #000', paddingTop: '6px', marginTop: '4px' }}>
-              <table style={{ width: '100%', fontSize: '11px' }}>
+            {/* 點鈔 / 合計 */}
+            <div style={{ borderTop: '2px solid #000', paddingTop: '4px', marginTop: '3px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #aaa' }}>
+                    <th style={{ textAlign: 'left', fontWeight: 'bold', paddingRight: '8px', width: '32px' }}>點鈔</th>
+                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>1000</th>
+                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>500</th>
+                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>100</th>
+                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>銅板</th>
+                    <th style={{ textAlign: 'right', fontWeight: 'bold' }}>實際現金</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  <tr>
-                    <td>應有現金</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{cashTotal.toLocaleString()}</td>
-                    <td style={{ paddingLeft: '16px', color: '#444' }}>點鈔</td>
-                    <td style={{ textAlign: 'right' }}>
-                      {summary.cash1000 > 0 && `1000×${summary.cash1000}  `}
-                      {summary.cash500 > 0 && `500×${summary.cash500}  `}
-                      {summary.cash100 > 0 && `100×${summary.cash100}  `}
-                      {summary.cashCoins > 0 && `銅板${summary.cashCoins}`}
-                    </td>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ color: '#555' }}>張數</td>
+                    <td style={{ textAlign: 'center' }}>{summary.cash1000}</td>
+                    <td style={{ textAlign: 'center' }}>{summary.cash500}</td>
+                    <td style={{ textAlign: 'center' }}>{summary.cash100}</td>
+                    <td style={{ textAlign: 'center' }}>{summary.cashCoins}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }} rowSpan={2}>{actualCash.toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td>實際現金</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{actualCash.toLocaleString()}</td>
-                    <td style={{ paddingLeft: '16px' }}>差異</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{diff > 0 ? '+' : ''}{diff.toLocaleString()}</td>
-                  </tr>
-                  <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold', fontSize: '13px' }}>
-                    <td colSpan={2} style={{ paddingTop: '4px' }}>總營業額</td>
-                    <td colSpan={2} style={{ textAlign: 'right', paddingTop: '4px' }}>{totalRevenue.toLocaleString()}</td>
+                    <td style={{ color: '#555' }}>金額</td>
+                    <td style={{ textAlign: 'center' }}>{(summary.cash1000 * 1000).toLocaleString()}</td>
+                    <td style={{ textAlign: 'center' }}>{(summary.cash500 * 500).toLocaleString()}</td>
+                    <td style={{ textAlign: 'center' }}>{(summary.cash100 * 100).toLocaleString()}</td>
+                    <td style={{ textAlign: 'center' }}>—</td>
                   </tr>
                 </tbody>
+                <tfoot>
+                  <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold' }}>
+                    <td colSpan={2} style={{ paddingTop: '2px' }}>差異 {diff > 0 ? '+' : ''}{diff.toLocaleString()}</td>
+                    <td colSpan={2} style={{ textAlign: 'center', paddingTop: '2px', color: '#555', fontWeight: 'normal' }}>應有現金 {cashTotal.toLocaleString()}</td>
+                    <td colSpan={2} style={{ textAlign: 'right', paddingTop: '2px', fontSize: '11px' }}>總營業額 {totalRevenue.toLocaleString()}</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
 
@@ -724,14 +761,14 @@ export default function CheckoutPage() {
 
       <style>{`
         @media print {
-          @page { size: A5 portrait; margin: 8mm; }
+          @page { size: A5 portrait; margin: 6mm; }
           body * { visibility: hidden !important; }
           #print-area, #print-area * { visibility: visible !important; }
           #print-area {
             display: block !important;
-            position: fixed;
+            position: absolute;
             top: 0; left: 0;
-            width: 148mm;
+            width: 136mm;
             filter: grayscale(1);
             color: #000 !important;
           }
