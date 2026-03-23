@@ -40,8 +40,7 @@ export default function CheckoutPage() {
   const [summary, setSummary] = useState<Summary>({
     lotterySales: 0, lotteryRedemption: 0, scratchRedemption: 0, sportsSales: 0, sportsRedemption: 0,
   })
-  const [editingKey, setEditingKey] = useState<keyof Summary | null>(null)
-  const [editingVal, setEditingVal] = useState('')
+  const [summaryEdits, setSummaryEdits] = useState<Partial<Record<keyof Summary, string>>>({})
   const [slots, setSlots] = useState<Slot[]>(buildSlots([], []))
   const [knownNames, setKnownNames] = useState<string[]>([])
   const [template, setTemplate] = useState<TplItem[]>([])
@@ -120,12 +119,16 @@ export default function CheckoutPage() {
   }
 
   // Summary editing
-  const startEdit = (key: keyof Summary) => { setEditingKey(key); setEditingVal(String(summary[key])) }
-  const commitEdit = () => {
-    if (!editingKey) return
-    const num = Math.max(0, parseInt(editingVal) || 0)
-    const updated = { ...summary, [editingKey]: num }
-    setSummary(updated); setEditingKey(null)
+  const getSummaryVal = (key: keyof Summary) =>
+    key in summaryEdits ? summaryEdits[key]! : String(summary[key])
+
+  const commitSummaryField = (key: keyof Summary) => {
+    const raw = summaryEdits[key]
+    if (raw === undefined) return
+    const num = Math.max(0, parseInt(raw) || 0)
+    const updated = { ...summary, [key]: num }
+    setSummary(updated)
+    setSummaryEdits(prev => { const next = { ...prev }; delete next[key]; return next })
     fetch('/api/daily-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, ...updated }) })
   }
 
@@ -222,20 +225,16 @@ export default function CheckoutPage() {
   const grandSheets = data ? data.rows.reduce((s, r) => s + r.sold, 0) : 0
   const extraTotal = slots.reduce((s, slot) => { const n = parseInt(slot.amount); return s + (slot.name.trim() && !isNaN(n) ? n : 0) }, 0)
 
-  const SummaryCell = ({ field }: { field: keyof Summary }) => {
-    const isEditing = editingKey === field
-    return isEditing ? (
-      <input type="number" min="0" autoFocus
-        className="w-24 text-right font-semibold text-gray-900 border-b-2 border-amber-400 focus:outline-none bg-transparent"
-        value={editingVal} onChange={e => setEditingVal(e.target.value)}
-        onBlur={commitEdit} onKeyDown={e => { if (e.key === 'Enter') commitEdit() }}
-      />
-    ) : (
-      <span className="w-24 text-right font-semibold text-gray-900 cursor-pointer hover:text-amber-700" onClick={() => startEdit(field)}>
-        {summary[field].toLocaleString()}
-      </span>
-    )
-  }
+  const SummaryCell = ({ field }: { field: keyof Summary }) => (
+    <input
+      type="number" min="0"
+      className="w-24 text-right font-semibold text-gray-900 focus:outline-none focus:border-b-2 focus:border-amber-400 bg-transparent"
+      value={getSummaryVal(field)}
+      onChange={e => setSummaryEdits(prev => ({ ...prev, [field]: e.target.value }))}
+      onBlur={() => commitSummaryField(field)}
+      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+    />
+  )
 
   const NetVal = ({ v }: { v: number }) => (
     <span className={`font-bold text-lg ${v > 0 ? 'text-gray-900' : v < 0 ? 'text-red-600' : 'text-gray-400'}`}>{v.toLocaleString()}</span>
