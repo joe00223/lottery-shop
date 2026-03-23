@@ -11,6 +11,7 @@ const links = [
   { href: '/inventory', label: '庫存管理' },
   { href: '/floor-inventory', label: '現場庫存' },
   { href: '/checkout', label: '結帳表' },
+  { href: '/monthly', label: '月報表' },
   { href: '/settings', label: '店家設定' },
 ]
 
