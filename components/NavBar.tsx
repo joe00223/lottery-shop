@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 const links = [
@@ -17,7 +17,14 @@ const links = [
 
 export default function NavBar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+    router.refresh()
+  }
 
   const linkClass = (href: string) =>
     `block px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
@@ -40,6 +47,11 @@ export default function NavBar() {
           ))}
         </div>
 
+        {/* Logout — desktop */}
+        <button onClick={logout} className="hidden md:block ml-auto text-sm font-medium text-amber-950 hover:bg-amber-500 px-3 py-2 rounded-md transition-colors">
+          登出
+        </button>
+
         {/* Mobile hamburger */}
         <button
           className="md:hidden ml-auto flex flex-col gap-1.5 p-2 rounded-lg hover:bg-amber-500 transition-colors"
@@ -60,6 +72,9 @@ export default function NavBar() {
               {link.label}
             </Link>
           ))}
+          <button onClick={logout} className="text-left px-4 py-2 rounded-md text-sm font-semibold text-amber-950 hover:bg-amber-500 transition-colors mt-1">
+            登出
+          </button>
         </div>
       )}
     </nav>
