@@ -76,10 +76,7 @@ export default function MonthlyPage() {
   }), { lotterySales: 0, lotteryRedemption: 0, scratchSales: 0, scratchRedemption: 0, sportsSales: 0, sportsRedemption: 0, extra: 0 })
 
   const grandNet =
-    net(total.lotterySales, total.lotteryRedemption) +
-    net(total.scratchSales, total.scratchRedemption) +
-    net(total.sportsSales, total.sportsRedemption) +
-    total.extra
+    total.lotterySales + total.scratchSales + total.sportsSales + total.extra
 
   const weekDay = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -130,7 +127,7 @@ export default function MonthlyPage() {
                 const lotteryNet = net(r.lotterySales, r.lotteryRedemption)
                 const scratchNet = net(r.scratchSales, r.scratchRedemption)
                 const sportsNet = net(r.sportsSales, r.sportsRedemption)
-                const dayNet = lotteryNet + scratchNet + sportsNet + r.extra
+                const dayNet = r.lotterySales + r.scratchSales + r.sportsSales + r.extra
                 const d = new Date(r.date + 'T12:00:00')
                 const dow = d.getDay()
                 const isSun = dow === 0
