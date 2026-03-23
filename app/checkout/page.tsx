@@ -330,10 +330,10 @@ export default function CheckoutPage() {
         <div className="border border-amber-300 rounded-xl overflow-hidden bg-white shadow-sm">
 
           {/* === Row 1: 額外項目 (left) + 刮刮樂 (right) === */}
-          <div className="flex border-b border-amber-300">
+          <div className="flex flex-col sm:flex-row border-b border-amber-300">
 
             {/* Left: 額外項目 */}
-            <div className="flex-shrink-0 border-r border-amber-300 p-3 min-w-[150px]">
+            <div className="sm:flex-shrink-0 border-b sm:border-b-0 sm:border-r border-amber-300 p-3 sm:min-w-[150px]">
               <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-amber-200">
                 <span className="font-bold text-amber-950 text-sm">額外項目</span>
                 <div className="flex items-center gap-1.5">

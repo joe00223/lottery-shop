@@ -195,28 +195,32 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
   return (
     <div>
       {/* Week Navigation */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={prevWeek} className="px-3 py-1.5 rounded bg-white border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-50">
-          ← 上週
-        </button>
-        <button onClick={goToday} className="px-3 py-1.5 rounded bg-amber-100 border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-200">
-          本週
-        </button>
-        <button onClick={nextWeek} className="px-3 py-1.5 rounded bg-white border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-50">
-          下週 →
-        </button>
-        <span className="text-amber-950 font-semibold ml-2">{formatWeekRange(currentWeek)}</span>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {/* Nav group */}
+        <div className="flex items-center gap-1">
+          <button onClick={prevWeek} className="px-3 py-1.5 rounded bg-white border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-50">
+            ← 上週
+          </button>
+          <button onClick={goToday} className="px-3 py-1.5 rounded bg-amber-100 border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-200">
+            本週
+          </button>
+          <button onClick={nextWeek} className="px-3 py-1.5 rounded bg-white border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-50">
+            下週 →
+          </button>
+        </div>
+        <span className="text-amber-950 font-semibold">{formatWeekRange(currentWeek)}</span>
         <input
           type="date"
           onChange={(e) => {
             if (!e.target.value) return
             setCurrentWeek(getWeekStart(new Date(e.target.value + 'T12:00:00')))
           }}
-          className="ml-2 border border-amber-300 rounded-lg px-2 py-1 text-sm text-amber-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="border border-amber-300 rounded-lg px-2 py-1 text-sm text-amber-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
           title="跳至指定週"
         />
-        {loading && <span className="text-amber-400 text-sm ml-2">載入中...</span>}
-        <div className="ml-auto flex items-center gap-2">
+        {loading && <span className="text-amber-400 text-sm">載入中...</span>}
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 sm:ml-auto flex-wrap">
           <button
             onClick={copyWeek}
             className="px-3 py-1.5 rounded bg-white border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-50"
@@ -251,7 +255,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                 日期
               </th>
               {hours.map((h) => (
-                <th key={h} className="w-20 min-w-20 border-b-2 border-r border-amber-200 bg-amber-100 text-sm text-amber-900 font-bold p-2 text-center">
+                <th key={h} className="w-20 min-w-20 border-b-2 border-r border-amber-200 bg-amber-100 text-base text-amber-900 font-bold p-2 text-center">
                   {String(h).padStart(2, '0')}:00
                 </th>
               ))}
@@ -319,15 +323,16 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
 
                         const CELL_W = 80
 
+                        const isLastRow = rowIndex === rowCount - 1
                         return (
                           <td
                             key={h}
-                            className={`border-b border-r p-0 relative ${
+                            className={`${isLastRow ? 'border-b-2' : 'border-b'} border-r p-0 relative ${
                               !operating
-                                ? 'bg-amber-50 border-amber-200'
+                                ? isLastRow ? 'bg-amber-50 border-amber-300' : 'bg-amber-50 border-amber-200'
                                 : inDrag
                                 ? 'bg-amber-200 border-amber-300'
-                                : 'bg-white border-amber-100'
+                                : isLastRow ? 'bg-white border-amber-300' : 'bg-white border-amber-100'
                             } ${editing && operating ? 'cursor-crosshair' : ''}`}
                             style={{
                               height: '52px',
