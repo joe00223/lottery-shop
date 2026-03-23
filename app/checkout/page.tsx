@@ -605,7 +605,7 @@ export default function CheckoutPage() {
       {/* ── Print area ── */}
       {data && (
         <div id="print-area" style={{ display: 'none' }}>
-          <div style={{ fontFamily: 'sans-serif', fontSize: '9px', color: '#000', lineHeight: 1.3 }}>
+          <div style={{ fontFamily: 'sans-serif', fontSize: '11px', color: '#000', lineHeight: 1.4 }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '3px', marginBottom: '5px' }}>
@@ -613,89 +613,92 @@ export default function CheckoutPage() {
               <span style={{ fontSize: '11px' }}>{date}</span>
             </div>
 
-            {/* 額外項目（左）＋ 刮刮樂（右）並排 */}
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '4px' }}>
+            {/* ── 上半區：外框包住額外項目（左）＋ 刮刮樂（右）＋ 彙總表 ── */}
+            <div style={{ border: '1px solid #000', marginBottom: '2px' }}>
 
-              {/* 左：額外項目 */}
-              {filledSlots.length > 0 && (
-                <div style={{ flexShrink: 0 }}>
-                  <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', marginBottom: '1px' }}>額外項目</div>
-                  <table style={{ borderCollapse: 'collapse' }}>
-                    <tbody>
-                      {filledSlots.map((s, i) => {
-                        const amt = parseInt(s.amount) || 0
-                        return (
-                          <tr key={i}>
-                            <td style={{ paddingRight: '6px', whiteSpace: 'nowrap' }}>{s.name}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
-                          </tr>
-                        )
-                      })}
-                      <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
-                        <td style={{ paddingRight: '6px' }}>小計</td>
-                        <td style={{ textAlign: 'right' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {/* 額外項目（左）＋ 刮刮樂（右）並排 */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #000' }}>
 
-              {/* 右：刮刮樂各幣別 */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {grouped.map(([price, rows]) => {
-                  const orderedRows = getOrderedRows(parseInt(price), rows)
-                  const totalSold = rows.reduce((s, r) => s + r.sold, 0)
-                  const totalAmt = totalSold * parseInt(price)
-                  const p = '0 2px'
-                  return (
-                    <div key={price} style={{ marginBottom: '3px' }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '1px' }}>刮刮樂 ${parseInt(price).toLocaleString()}</div>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid #aaa', borderTop: '1px solid #000' }}>
-                            <th style={{ textAlign: 'left', padding: p }}>名稱</th>
-                            <th style={{ textAlign: 'right', padding: p }}>昨日</th>
-                            <th style={{ textAlign: 'right', padding: p }}>補張</th>
-                            <th style={{ textAlign: 'right', padding: p }}>今日</th>
-                            <th style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>銷售</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {orderedRows.map(r => (
-                            <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
-                              <td style={{ padding: p }}>{r.name}</td>
-                              <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.yesterdayDisplay}</td>
-                              <td style={{ textAlign: 'right', padding: p, color: r.supplement > 0 ? '#000' : '#999' }}>{r.supplement > 0 ? `+${r.supplement}` : r.supplement}</td>
-                              <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.todayDisplay}</td>
-                              <td style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>{r.sold}</td>
+                {/* 左：額外項目 */}
+                {filledSlots.length > 0 && (
+                  <div style={{ flexShrink: 0, borderRight: '1px solid #000', padding: '3px 5px' }}>
+                    <div style={{ fontWeight: 'bold', borderBottom: '1px solid #aaa', marginBottom: '1px' }}>額外項目</div>
+                    <table style={{ borderCollapse: 'collapse' }}>
+                      <tbody>
+                        {filledSlots.map((s, i) => {
+                          const amt = parseInt(s.amount) || 0
+                          return (
+                            <tr key={i}>
+                              <td style={{ paddingRight: '8px', whiteSpace: 'nowrap' }}>{s.name}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
                             </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold' }}>
-                            <td colSpan={4} style={{ padding: p }}>小計</td>
-                            <td style={{ textAlign: 'right', padding: p }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  )
-                })}
+                          )
+                        })}
+                        <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold' }}>
+                          <td style={{ paddingRight: '8px' }}>小計</td>
+                          <td style={{ textAlign: 'right' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* 右：刮刮樂各幣別 */}
+                <div style={{ flex: 1, minWidth: 0, padding: '3px 5px' }}>
+                  {grouped.map(([price, rows], gi) => {
+                    const orderedRows = getOrderedRows(parseInt(price), rows)
+                    const totalSold = rows.reduce((s, r) => s + r.sold, 0)
+                    const totalAmt = totalSold * parseInt(price)
+                    const p = '1px 3px'
+                    return (
+                      <div key={price} style={{ marginBottom: gi < grouped.length - 1 ? '4px' : 0 }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '1px' }}>刮刮樂 ${parseInt(price).toLocaleString()}</div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #aaa' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #aaa', background: '#f5f5f5' }}>
+                              <th style={{ textAlign: 'left', padding: p }}>名稱</th>
+                              <th style={{ textAlign: 'right', padding: p, borderLeft: '1px solid #ddd' }}>昨日</th>
+                              <th style={{ textAlign: 'right', padding: p, borderLeft: '1px solid #ddd' }}>補張</th>
+                              <th style={{ textAlign: 'right', padding: p, borderLeft: '1px solid #ddd' }}>今日</th>
+                              <th style={{ textAlign: 'right', padding: p, borderLeft: '1px solid #aaa', fontWeight: 'bold' }}>銷售</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {orderedRows.map(r => (
+                              <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
+                                <td style={{ padding: p }}>{r.name}</td>
+                                <td style={{ textAlign: 'right', padding: p, color: '#555', borderLeft: '1px solid #eee' }}>{r.yesterdayDisplay}</td>
+                                <td style={{ textAlign: 'right', padding: p, color: r.supplement > 0 ? '#000' : '#aaa', borderLeft: '1px solid #eee' }}>{r.supplement > 0 ? `+${r.supplement}` : r.supplement}</td>
+                                <td style={{ textAlign: 'right', padding: p, color: '#555', borderLeft: '1px solid #eee' }}>{r.todayDisplay}</td>
+                                <td style={{ textAlign: 'right', padding: p, fontWeight: 'bold', borderLeft: '1px solid #aaa' }}>{r.sold}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold', background: '#f5f5f5' }}>
+                              <td colSpan={4} style={{ padding: p }}>小計</td>
+                              <td style={{ textAlign: 'right', padding: p, borderLeft: '1px solid #aaa' }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )
+                  })}
+                </div>
+
               </div>
 
-            </div>
-
-            {/* 主彙總表：彩券/刮刮樂/運彩 × 銷售/兌獎/淨額，右側欄位 rowspan=3 */}
-            {(() => {
-              const C: React.CSSProperties = { padding: '2px 4px', borderRight: '1px solid #bbb' }
-              const R: React.CSSProperties = { ...C, textAlign: 'right' }
-              const RB: React.CSSProperties = { ...R, fontWeight: 'bold' }
-              const Rlast: React.CSSProperties = { padding: '2px 4px', textAlign: 'right' }
-              const label: React.CSSProperties = { padding: '2px 3px', color: '#555', whiteSpace: 'nowrap' }
-              return (
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '4px' }}>
+              {/* 主彙總表：彩券/刮刮樂/運彩 × 銷售/兌獎/淨額，右側欄位 rowspan=3 */}
+              {(() => {
+                const C: React.CSSProperties = { padding: '2px 4px', borderRight: '1px solid #bbb' }
+                const R: React.CSSProperties = { ...C, textAlign: 'right' }
+                const RB: React.CSSProperties = { ...R, fontWeight: 'bold' }
+                const Rlast: React.CSSProperties = { padding: '2px 4px', textAlign: 'right' }
+                const label: React.CSSProperties = { padding: '2px 3px', color: '#555', whiteSpace: 'nowrap' }
+                return (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderTop: '2px solid #000', borderBottom: '1px solid #000' }}>
+                    <tr style={{ borderBottom: '1px solid #000', background: '#f5f5f5' }}>
                       <th colSpan={2} style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>彩券</th>
                       <th colSpan={2} style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>刮刮樂</th>
                       <th colSpan={2} style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>運彩</th>
@@ -758,8 +761,10 @@ export default function CheckoutPage() {
                     </tr>
                   </tbody>
                 </table>
-              )
-            })()}
+                )
+              })()}
+
+            </div>{/* end outer border box */}
 
           </div>
         </div>
@@ -767,7 +772,7 @@ export default function CheckoutPage() {
 
       <style>{`
         @media print {
-          @page { size: A5 portrait; margin: 6mm 6mm 6mm 20mm; }
+          @page { size: A5 portrait; margin: 6mm 4mm 6mm 24mm; }
           body { background: white !important; min-height: 0 !important; }
           nav { display: none !important; }
           main {
