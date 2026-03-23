@@ -50,6 +50,8 @@ export default function CheckoutPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[][]>([])
   const navigating = useRef(false)
   const pendingFocus = useRef<[number, number] | null>(null)
+  const slotsRef = useRef(slots)
+  slotsRef.current = slots
 
   useEffect(() => {
     if (pendingFocus.current) {
@@ -138,7 +140,7 @@ export default function CheckoutPage() {
 
   const saveSlot = async (idx: number) => {
     if (navigating.current) { navigating.current = false; return }
-    const slot = slots[idx]
+    const slot = slotsRef.current[idx]
     const name = slot.name.trim()
     const amount = parseInt(slot.amount)
     if (!name || isNaN(amount)) {
