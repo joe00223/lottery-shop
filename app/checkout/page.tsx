@@ -605,7 +605,7 @@ export default function CheckoutPage() {
       {/* ── Print area ── */}
       {data && (
         <div id="print-area" style={{ display: 'none' }}>
-          <div style={{ fontFamily: 'sans-serif', fontSize: '9px', color: '#000', lineHeight: 1.3, paddingLeft: '6mm' }}>
+          <div style={{ fontFamily: 'sans-serif', fontSize: '9px', color: '#000', lineHeight: 1.3 }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '3px', marginBottom: '5px' }}>
@@ -613,69 +613,67 @@ export default function CheckoutPage() {
               <span style={{ fontSize: '11px' }}>{date}</span>
             </div>
 
-            {/* Scratch ticket results per denomination */}
+            {/* Scratch ticket results per denomination — 票名為列，昨日/補/今日/銷售為欄 */}
             {grouped.map(([price, rows]) => {
               const orderedRows = getOrderedRows(parseInt(price), rows)
               const totalSold = rows.reduce((s, r) => s + r.sold, 0)
               const totalAmt = totalSold * parseInt(price)
+              const p = '1px 4px'
               return (
                 <div key={price} style={{ marginBottom: '5px' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '1px' }}>刮刮樂 ${parseInt(price).toLocaleString()}</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #000' }}>
-                        <th colSpan={orderedRows.length + 1} style={{ textAlign: 'left', fontWeight: 'bold', paddingBottom: '1px' }}>
-                          刮刮樂 ${parseInt(price).toLocaleString()}
-                        </th>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid #aaa' }}>
-                        <th style={{ textAlign: 'left', color: '#555', fontWeight: 'normal', paddingRight: '4px', width: '30px' }}></th>
-                        {orderedRows.map(r => (
-                          <th key={r.id} style={{ textAlign: 'center', color: '#333', fontWeight: 'bold', paddingRight: '4px' }}>{r.name}</th>
-                        ))}
-                        <th style={{ textAlign: 'right', fontWeight: 'bold' }}>小計</th>
+                      <tr style={{ borderBottom: '1px solid #aaa', borderTop: '1px solid #000' }}>
+                        <th style={{ textAlign: 'left', padding: p }}>名稱</th>
+                        <th style={{ textAlign: 'right', padding: p }}>昨日</th>
+                        <th style={{ textAlign: 'right', padding: p }}>補張</th>
+                        <th style={{ textAlign: 'right', padding: p }}>今日</th>
+                        <th style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>銷售</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr style={{ borderBottom: '1px solid #ddd' }}>
-                        <td style={{ color: '#555', paddingRight: '4px' }}>銷售</td>
-                        {orderedRows.map(r => (
-                          <td key={r.id} style={{ textAlign: 'center', fontWeight: r.sold > 0 ? 'bold' : 'normal', color: r.sold > 0 ? '#000' : '#999' }}>{r.sold}</td>
-                        ))}
-                        <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
-                      </tr>
+                      {orderedRows.map(r => (
+                        <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: p }}>{r.name}</td>
+                          <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.yesterdayDisplay}</td>
+                          <td style={{ textAlign: 'right', padding: p, color: r.supplement > 0 ? '#000' : '#999' }}>{r.supplement > 0 ? `+${r.supplement}` : r.supplement}</td>
+                          <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.todayDisplay}</td>
+                          <td style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>{r.sold}</td>
+                        </tr>
+                      ))}
                     </tbody>
+                    <tfoot>
+                      <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold' }}>
+                        <td colSpan={4} style={{ padding: p }}>小計</td>
+                        <td style={{ textAlign: 'right', padding: p }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               )
             })}
 
-            {/* 額外項目明細 */}
+            {/* 額外項目明細 — width:auto 不撐滿，項目名稱緊跟金額 */}
             {filledSlots.length > 0 && (
               <div style={{ marginBottom: '4px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #000' }}>
-                      <th style={{ textAlign: 'left', fontWeight: 'bold', padding: '1px 4px 1px 0' }}>額外項目</th>
-                      <th style={{ textAlign: 'right', fontWeight: 'bold', padding: '1px 0' }}>金額</th>
-                    </tr>
-                  </thead>
+                <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', marginBottom: '1px' }}>額外項目</div>
+                <table style={{ borderCollapse: 'collapse' }}>
                   <tbody>
                     {filledSlots.map((s, i) => {
                       const amt = parseInt(s.amount) || 0
                       return (
-                        <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: '1px 4px 1px 0' }}>{s.name}</td>
-                          <td style={{ textAlign: 'right', fontWeight: amt !== 0 ? 'bold' : 'normal', padding: '1px 0' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
+                        <tr key={i}>
+                          <td style={{ paddingRight: '6px', whiteSpace: 'nowrap' }}>{s.name}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
                         </tr>
                       )
                     })}
-                  </tbody>
-                  <tfoot>
                     <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
-                      <td style={{ padding: '1px 4px 1px 0' }}>小計</td>
-                      <td style={{ textAlign: 'right', padding: '1px 0' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
+                      <td style={{ paddingRight: '6px' }}>小計</td>
+                      <td style={{ textAlign: 'right' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
                     </tr>
-                  </tfoot>
+                  </tbody>
                 </table>
               </div>
             )}
@@ -762,17 +760,22 @@ export default function CheckoutPage() {
 
       <style>{`
         @media print {
-          @page { size: A5 portrait; margin: 6mm; }
-          html, body { height: auto !important; overflow: hidden !important; }
-          body * { visibility: hidden !important; }
-          #print-area, #print-area * { visibility: visible !important; }
+          @page { size: A5 portrait; margin: 6mm 6mm 6mm 14mm; }
+          body { background: white !important; min-height: 0 !important; }
+          nav { display: none !important; }
+          main {
+            height: 0 !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
           #print-area {
             display: block !important;
-            position: fixed;
+            position: absolute;
             top: 0; left: 0;
-            width: 136mm;
-            filter: grayscale(1);
+            width: 122mm;
             color: #000 !important;
+            filter: grayscale(1);
           }
         }
       `}</style>
