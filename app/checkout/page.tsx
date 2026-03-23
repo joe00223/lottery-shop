@@ -346,7 +346,9 @@ export default function CheckoutPage() {
               const lotteryNet = summary.lotterySales - summary.lotteryRedemption
               const sportsNet = summary.sportsSales - summary.sportsRedemption
               const grandNet = lotteryNet + scratchNet + sportsNet
+              const cashTotal = grandNet + extraTotal
               return (
+                <>
                 <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
                   <table className="border-collapse text-sm w-full">
                     <thead>
@@ -386,6 +388,18 @@ export default function CheckoutPage() {
                     </tbody>
                   </table>
                 </div>
+
+                <div className="rounded-xl border-2 border-amber-400 bg-amber-50 px-6 py-4 flex items-center gap-3 flex-wrap">
+                  <span className="text-sm text-amber-800 font-medium">總計</span>
+                  <span className={`font-bold ${grandNet >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{grandNet.toLocaleString()}</span>
+                  <span className="text-amber-400">＋</span>
+                  <span className="text-sm text-amber-800 font-medium">額外項目</span>
+                  <span className={`font-bold ${extraTotal >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</span>
+                  <span className="text-amber-400">＝</span>
+                  <span className="text-sm text-amber-900 font-bold">應有現金</span>
+                  <span className={`text-2xl font-bold ${cashTotal >= 0 ? 'text-amber-950' : 'text-red-600'}`}>{cashTotal.toLocaleString()}</span>
+                </div>
+                </>
               )
             })()}
           </div>
