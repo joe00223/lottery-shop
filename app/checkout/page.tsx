@@ -10,6 +10,7 @@ type CheckoutData = { date: string; yesterday: string; rows: Row[] }
 type Summary = {
   lotterySales: number; lotteryRedemption: number
   scratchRedemption: number; sportsSales: number; sportsRedemption: number
+  cash1000: number; cash500: number; cash100: number; cashCoins: number
 }
 type Slot = { id?: number; name: string; amount: string }
 type TplItem = { id: number; name: string; amount: number }
@@ -50,6 +51,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [summary, setSummary] = useState<Summary>({
     lotterySales: 0, lotteryRedemption: 0, scratchRedemption: 0, sportsSales: 0, sportsRedemption: 0,
+    cash1000: 0, cash500: 0, cash100: 0, cashCoins: 0,
   })
   const [summaryEdits, setSummaryEdits] = useState<Partial<Record<keyof Summary, string>>>({})
   const [slots, setSlots] = useState<Slot[]>(buildSlots([], []))
@@ -389,6 +391,7 @@ export default function CheckoutPage() {
                   </table>
                 </div>
 
+                {/* 應有現金 */}
                 <div className="rounded-xl border-2 border-amber-400 bg-amber-50 px-6 py-4 flex items-center gap-3 flex-wrap">
                   <span className="text-sm text-amber-800 font-medium">總計</span>
                   <span className={`font-bold ${grandNet >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{grandNet.toLocaleString()}</span>
@@ -399,6 +402,64 @@ export default function CheckoutPage() {
                   <span className="text-sm text-amber-900 font-bold">應有現金</span>
                   <span className={`text-2xl font-bold ${cashTotal >= 0 ? 'text-amber-950' : 'text-red-600'}`}>{cashTotal.toLocaleString()}</span>
                 </div>
+
+                {/* 點鈔 */}
+                {(() => {
+                  const actualCash = summary.cash1000 * 1000 + summary.cash500 * 500 + summary.cash100 * 100 + summary.cashCoins
+                  const diff = actualCash - cashTotal
+                  const totalRevenue = summary.lotterySales + grandTotal + summary.sportsSales
+                  return (
+                    <div className="rounded-xl border border-amber-200 shadow-sm bg-white overflow-hidden">
+                      <div className="px-4 py-2 bg-amber-100 border-b border-amber-200 font-bold text-amber-950 text-sm">點鈔</div>
+                      <div className="px-4 py-3 space-y-3">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {([['cash1000', 1000], ['cash500', 500], ['cash100', 100]] as [keyof Summary, number][]).map(([field, denom]) => (
+                            <div key={field} className="flex items-center gap-1.5">
+                              <span className="text-sm font-semibold text-amber-900">{denom.toLocaleString()}×</span>
+                              <input
+                                type="number" min="0"
+                                className="w-16 text-sm px-2 py-1 text-center border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                                value={getSummaryVal(field)}
+                                onChange={e => setSummaryEdits(prev => ({ ...prev, [field]: e.target.value }))}
+                                onBlur={() => commitSummaryField(field)}
+                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                              />
+                              <span className="text-xs text-gray-500">張</span>
+                            </div>
+                          ))}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-semibold text-amber-900">銅板</span>
+                            <input
+                              type="number" min="0"
+                              className="w-20 text-sm px-2 py-1 text-center border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              value={getSummaryVal('cashCoins')}
+                              onChange={e => setSummaryEdits(prev => ({ ...prev, cashCoins: e.target.value }))}
+                              onBlur={() => commitSummaryField('cashCoins')}
+                              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                            />
+                            <span className="text-xs text-gray-500">元</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 flex-wrap border-t border-amber-100 pt-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-amber-800">實際現金</span>
+                            <span className="font-bold text-gray-900">{actualCash.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-amber-800">差異</span>
+                            <span className={`font-bold text-lg ${diff === 0 ? 'text-gray-400' : diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {diff > 0 ? '+' : ''}{diff.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 ml-auto">
+                            <span className="text-sm font-bold text-amber-900">總營業額</span>
+                            <span className="font-bold text-xl text-amber-950">{totalRevenue.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
                 </>
               )
             })()}

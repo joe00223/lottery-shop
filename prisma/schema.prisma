@@ -73,6 +73,10 @@ model DailySummary {
   scratchRedemption Int      @default(0)
   sportsSales       Int      @default(0)
   sportsRedemption  Int      @default(0)
+  cash1000          Int      @default(0)
+  cash500           Int      @default(0)
+  cash100           Int      @default(0)
+  cashCoins         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
