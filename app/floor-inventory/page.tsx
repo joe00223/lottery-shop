@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-type Ticket = { id: number; name: string; price: number }
+type Ticket = { id: number; name: string; price: number; sheetsPerBook: number }
 type CellData = { unopened: number; opened: number; onDisplay: number; restockSheets: number }
 type Field = 'unopened' | 'opened' | 'onDisplay'
 type EditingCell = { date: string; ticketId: number; field: Field; value: string } | null
@@ -36,6 +36,9 @@ export default function FloorInventoryPage() {
   const [ticketOrder, setTicketOrder] = useState<Record<number, number[]>>({})
   const [dragKey, setDragKey] = useState<{ price: number; ticketId: number } | null>(null)
   const [dragOverId, setDragOverId] = useState<number | null>(null)
+  const [addBooksModal, setAddBooksModal] = useState<{ ticketId: number; ticketName: string; sheetsPerBook: number } | null>(null)
+  const [addBooksDate, setAddBooksDate] = useState(toDateStr(new Date()))
+  const [addBooksCount, setAddBooksCount] = useState('')
 
   useEffect(() => {
     try {
@@ -190,6 +193,38 @@ export default function FloorInventoryPage() {
     })
   }
 
+  const openAddBooks = (t: Ticket) => {
+    setAddBooksDate(toDateStr(new Date()))
+    setAddBooksCount('')
+    setAddBooksModal({ ticketId: t.id, ticketName: t.name, sheetsPerBook: t.sheetsPerBook })
+  }
+
+  const saveAddBooks = async () => {
+    if (!addBooksModal) return
+    const books = Math.max(0, parseInt(addBooksCount) || 0)
+    if (books === 0) { setAddBooksModal(null); return }
+    const { ticketId, sheetsPerBook } = addBooksModal
+    const key = `${addBooksDate}__${ticketId}`
+    const current = data[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0 }
+    const newUnopened = current.unopened + books
+    await Promise.all([
+      fetch('/api/floor-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: addBooksDate, scratchTicketId: ticketId, ...current, unopened: newUnopened }),
+      }),
+      fetch('/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scratchTicketId: ticketId, type: 'OUT', books, note: `補現場庫存 ${addBooksDate}` }),
+      }),
+    ])
+    setData(prev => ({ ...prev, [key]: { ...current, unopened: newUnopened } }))
+    addDate(addBooksDate)
+    setAddBooksModal(null)
+    setAddBooksCount('')
+  }
+
   const commitEdit = (ed: EditingCell) => {
     if (navigating.current) { navigating.current = false; return }
     commitAndMove(ed)
@@ -304,7 +339,17 @@ export default function FloorInventoryPage() {
                               'bg-amber-100'
                             }`}
                           >
-                            {t.name}
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span>{t.name}</span>
+                              <button
+                                draggable={false}
+                                onMouseDown={e => e.stopPropagation()}
+                                onDragStart={e => e.stopPropagation()}
+                                onClick={e => { e.stopPropagation(); openAddBooks(t) }}
+                                className="text-amber-600 hover:text-white hover:bg-amber-500 border border-amber-400 rounded px-1 text-xs font-bold leading-none py-0.5 transition-colors cursor-pointer"
+                                title="補未拆封"
+                              >＋</button>
+                            </div>
                           </th>
                         ))}
                         <th className="border-b border-amber-200 bg-amber-50 w-8" rowSpan={2} />
@@ -349,6 +394,40 @@ export default function FloorInventoryPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {addBooksModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setAddBooksModal(null)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-amber-950 mb-4">補未拆封 — {addBooksModal.ticketName}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-600">日期</label>
+                <input type="date" value={addBooksDate}
+                  onChange={e => setAddBooksDate(e.target.value)}
+                  className="w-full mt-1 border border-amber-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">本數（1本 = {addBooksModal.sheetsPerBook} 張）</label>
+                <input type="text" inputMode="numeric" autoFocus
+                  value={addBooksCount}
+                  onChange={e => setAddBooksCount(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveAddBooks(); if (e.key === 'Escape') setAddBooksModal(null) }}
+                  className="w-full mt-1 border border-amber-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  placeholder="輸入本數"
+                />
+              </div>
+              <div className="text-xs text-gray-400">
+                未拆封 +{parseInt(addBooksCount) || 0} 本　庫存管理 -{parseInt(addBooksCount) || 0} 本
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setAddBooksModal(null)} className="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">取消</button>
+              <button onClick={saveAddBooks} className="flex-1 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600">確認</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

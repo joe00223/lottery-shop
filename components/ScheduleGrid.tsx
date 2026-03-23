@@ -376,7 +376,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                                     className="absolute top-0 left-0 h-full flex items-center justify-center pointer-events-none z-10"
                                     style={{ width: `${runSpan * CELL_W}px` }}
                                   >
-                                    <span className="text-black text-base font-bold truncate px-2" style={{ textShadow: '0 0 4px #fff, 0 0 4px #fff, 0 1px 2px #fff' }}>
+                                    <span className="text-black text-base truncate px-2" style={{ textShadow: '0 0 4px #fff, 0 0 4px #fff, 0 1px 2px #fff' }}>
                                       {cell.employee.name}
                                     </span>
                                   </div>
