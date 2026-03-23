@@ -21,15 +21,26 @@ function toTaipeiDateStr(d: Date) {
 }
 
 function buildSlots(items: { id: number; name: string; amount: number }[], tpl: TplItem[]): Slot[] {
-  if (items.length > 0) {
-    const filled: Slot[] = items.map(i => ({ id: i.id, name: i.name, amount: String(i.amount) }))
-    while (filled.length < Math.max(MIN_SLOTS, tpl.length)) filled.push({ name: '', amount: '' })
-    return filled
+  const savedByName = new Map(items.map(i => [i.name, i]))
+  const tplNames = new Set(tpl.map(t => t.name))
+  const result: Slot[] = []
+
+  // Template items first — use saved value if exists, otherwise show name with empty amount
+  for (const t of tpl) {
+    const saved = savedByName.get(t.name)
+    result.push(saved
+      ? { id: saved.id, name: saved.name, amount: String(saved.amount) }
+      : { name: t.name, amount: t.amount !== 0 ? String(t.amount) : '' }
+    )
   }
-  // no saved items → use template
-  const filled: Slot[] = tpl.map(t => ({ name: t.name, amount: t.amount !== 0 ? String(t.amount) : '' }))
-  while (filled.length < MIN_SLOTS) filled.push({ name: '', amount: '' })
-  return filled
+
+  // Non-template saved items after
+  for (const item of items) {
+    if (!tplNames.has(item.name)) result.push({ id: item.id, name: item.name, amount: String(item.amount) })
+  }
+
+  while (result.length < MIN_SLOTS) result.push({ name: '', amount: '' })
+  return result
 }
 
 export default function CheckoutPage() {
