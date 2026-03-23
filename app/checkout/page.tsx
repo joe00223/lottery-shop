@@ -605,7 +605,7 @@ export default function CheckoutPage() {
       {/* ── Print area ── */}
       {data && (
         <div id="print-area" style={{ display: 'none' }}>
-          <div style={{ fontFamily: 'sans-serif', fontSize: '9px', color: '#000', lineHeight: 1.3 }}>
+          <div style={{ fontFamily: 'sans-serif', fontSize: '9px', color: '#000', lineHeight: 1.3, paddingLeft: '6mm' }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '3px', marginBottom: '5px' }}>
@@ -648,6 +648,37 @@ export default function CheckoutPage() {
                 </div>
               )
             })}
+
+            {/* 額外項目明細 */}
+            {filledSlots.length > 0 && (
+              <div style={{ marginBottom: '4px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #000' }}>
+                      <th style={{ textAlign: 'left', fontWeight: 'bold', padding: '1px 4px 1px 0' }}>額外項目</th>
+                      <th style={{ textAlign: 'right', fontWeight: 'bold', padding: '1px 0' }}>金額</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filledSlots.map((s, i) => {
+                      const amt = parseInt(s.amount) || 0
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '1px 4px 1px 0' }}>{s.name}</td>
+                          <td style={{ textAlign: 'right', fontWeight: amt !== 0 ? 'bold' : 'normal', padding: '1px 0' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
+                      <td style={{ padding: '1px 4px 1px 0' }}>小計</td>
+                      <td style={{ textAlign: 'right', padding: '1px 0' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
 
             {/* 主彙總表：彩券/刮刮樂/運彩 × 銷售/兌獎/淨額，右側欄位 rowspan=3 */}
             {(() => {
@@ -732,11 +763,12 @@ export default function CheckoutPage() {
       <style>{`
         @media print {
           @page { size: A5 portrait; margin: 6mm; }
+          html, body { height: auto !important; overflow: hidden !important; }
           body * { visibility: hidden !important; }
           #print-area, #print-area * { visibility: visible !important; }
           #print-area {
             display: block !important;
-            position: absolute;
+            position: fixed;
             top: 0; left: 0;
             width: 136mm;
             filter: grayscale(1);
