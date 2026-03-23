@@ -128,7 +128,7 @@ export default function EmployeesPage() {
             </div>
             <div className="mb-6">
               <label className="block text-sm font-medium text-amber-900 mb-2">顏色</label>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap mb-2">
                 {PRESET_COLORS.map((c) => (
                   <button
                     key={c}
@@ -137,6 +137,15 @@ export default function EmployeesPage() {
                     style={{ backgroundColor: c }}
                   />
                 ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={form.color}
+                  onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
+                  className="w-8 h-8 rounded cursor-pointer border border-amber-200"
+                />
+                <span className="text-xs text-gray-500 font-mono">{form.color}</span>
               </div>
             </div>
             <div className="flex gap-2">
