@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 type Row = {
   id: number
@@ -55,6 +55,17 @@ export default function CheckoutPage() {
   const [editingVal, setEditingVal] = useState('')
   const [slots, setSlots] = useState<Slot[]>(itemsToSlots([]))
   const [knownNames, setKnownNames] = useState<string[]>([])
+  const inputRefs = useRef<(HTMLInputElement | null)[][]>([])
+  const navigating = useRef(false)
+  const pendingFocus = useRef<[number, number] | null>(null)
+
+  useEffect(() => {
+    if (pendingFocus.current) {
+      const [r, c] = pendingFocus.current
+      pendingFocus.current = null
+      inputRefs.current[r]?.[c]?.focus()
+    }
+  }, [slots.length])
 
   const load = async (d: string) => {
     setLoading(true)
@@ -102,6 +113,7 @@ export default function CheckoutPage() {
   }
 
   const saveSlot = async (idx: number) => {
+    if (navigating.current) { navigating.current = false; return }
     const slot = slots[idx]
     const name = slot.name.trim()
     const amount = parseInt(slot.amount)
@@ -115,7 +127,7 @@ export default function CheckoutPage() {
     }
 
     if (slot.id) {
-      await fetch(`/api/daily-summary-items/${slot.id}`, {
+      fetch(`/api/daily-summary-items/${slot.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, amount }),
@@ -134,6 +146,23 @@ export default function CheckoutPage() {
   }
 
   const addSlot = () => setSlots(prev => [...prev, { name: '', amount: '' }])
+
+  const navigate = (idx: number, col: number, dir: 'right' | 'left' | 'down' | 'up') => {
+    navigating.current = true
+    if (dir === 'right') {
+      if (col < 1) inputRefs.current[idx]?.[1]?.focus()
+      else if (idx < slots.length - 1) inputRefs.current[idx + 1]?.[0]?.focus()
+      else { addSlot(); pendingFocus.current = [idx + 1, 0] }
+    } else if (dir === 'left') {
+      if (col > 0) inputRefs.current[idx]?.[0]?.focus()
+      else if (idx > 0) inputRefs.current[idx - 1]?.[1]?.focus()
+    } else if (dir === 'down') {
+      if (idx < slots.length - 1) inputRefs.current[idx + 1]?.[col]?.focus()
+      else { addSlot(); pendingFocus.current = [idx + 1, col] }
+    } else if (dir === 'up') {
+      if (idx > 0) inputRefs.current[idx - 1]?.[col]?.focus()
+    }
+  }
 
   const grouped = data
     ? Object.entries(
@@ -352,30 +381,50 @@ export default function CheckoutPage() {
                 {knownNames.map(n => <option key={n} value={n} />)}
               </datalist>
               <div className="divide-y divide-amber-100 bg-white">
-                {slots.map((slot, idx) => (
-                  <div key={idx} className="flex items-center gap-1 px-2 py-1.5">
-                    <input
-                      list="extra-names"
-                      placeholder="項目"
-                      className="flex-1 min-w-0 text-sm px-1.5 py-1 border border-transparent rounded focus:outline-none focus:border-amber-300 bg-transparent hover:bg-amber-50"
-                      value={slot.name}
-                      onChange={e => updateSlot(idx, 'name', e.target.value)}
-                      onBlur={() => saveSlot(idx)}
-                    />
-                    <input
-                      type="number"
-                      placeholder="0"
-                      className={`w-20 text-sm px-1.5 py-1 text-right border border-transparent rounded focus:outline-none focus:border-amber-300 bg-transparent hover:bg-amber-50 ${
-                        parseInt(slot.amount) < 0 ? 'text-red-600 font-semibold' :
-                        parseInt(slot.amount) > 0 ? 'text-gray-900 font-semibold' : 'text-gray-400'
-                      }`}
-                      value={slot.amount}
-                      onChange={e => updateSlot(idx, 'amount', e.target.value)}
-                      onBlur={() => saveSlot(idx)}
-                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                    />
-                  </div>
-                ))}
+                {slots.map((slot, idx) => {
+                  if (!inputRefs.current[idx]) inputRefs.current[idx] = [null, null]
+                  return (
+                    <div key={idx} className="flex items-center gap-1 px-2 py-1.5">
+                      <input
+                        list="extra-names"
+                        placeholder="項目"
+                        className="flex-1 min-w-0 text-sm px-1.5 py-1 border border-transparent rounded focus:outline-none focus:border-amber-300 bg-transparent hover:bg-amber-50"
+                        value={slot.name}
+                        ref={el => { inputRefs.current[idx] = [el, inputRefs.current[idx]?.[1] ?? null] }}
+                        onChange={e => updateSlot(idx, 'name', e.target.value)}
+                        onBlur={() => saveSlot(idx)}
+                        onKeyDown={e => {
+                          if (e.key === 'Escape') { (e.target as HTMLInputElement).blur(); return }
+                          if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); navigate(idx, 0, 'right') }
+                          else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); navigate(idx, 0, 'left') }
+                          else if (e.key === 'ArrowDown') { e.preventDefault(); navigate(idx, 0, 'down') }
+                          else if (e.key === 'ArrowUp') { e.preventDefault(); navigate(idx, 0, 'up') }
+                          else if (e.key === 'ArrowRight') { e.preventDefault(); navigate(idx, 0, 'right') }
+                        }}
+                      />
+                      <input
+                        type="number"
+                        placeholder="0"
+                        className={`w-20 text-sm px-1.5 py-1 text-right border border-transparent rounded focus:outline-none focus:border-amber-300 bg-transparent hover:bg-amber-50 ${
+                          parseInt(slot.amount) < 0 ? 'text-red-600 font-semibold' :
+                          parseInt(slot.amount) > 0 ? 'text-gray-900 font-semibold' : 'text-gray-400'
+                        }`}
+                        value={slot.amount}
+                        ref={el => { inputRefs.current[idx] = [inputRefs.current[idx]?.[0] ?? null, el] }}
+                        onChange={e => updateSlot(idx, 'amount', e.target.value)}
+                        onBlur={() => saveSlot(idx)}
+                        onKeyDown={e => {
+                          if (e.key === 'Escape') { (e.target as HTMLInputElement).blur(); return }
+                          if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); navigate(idx, 1, 'right') }
+                          else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); navigate(idx, 1, 'left') }
+                          else if (e.key === 'ArrowDown') { e.preventDefault(); navigate(idx, 1, 'down') }
+                          else if (e.key === 'ArrowUp') { e.preventDefault(); navigate(idx, 1, 'up') }
+                          else if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(idx, 1, 'left') }
+                        }}
+                      />
+                    </div>
+                  )
+                })}
               </div>
               <div className="px-2 py-2 bg-amber-50 border-t border-amber-200">
                 <button onClick={addSlot}
