@@ -304,6 +304,7 @@ export default function CheckoutPage() {
             )
 
             return (
+              <>
               <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
                 <table className="border-collapse text-sm w-full">
                   <thead>
@@ -394,6 +395,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
+              </>
             )
           })()}
         </div>
