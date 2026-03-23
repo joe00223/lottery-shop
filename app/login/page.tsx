@@ -1,20 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? '彩券行管理系統'
+
 export default function LoginPage() {
-  const [storeName, setStoreName] = useState('彩券行管理系統')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-
-  useEffect(() => {
-    fetch('/api/store').then(r => r.json()).then(d => {
-      if (d?.name) setStoreName(d.name)
-    }).catch(() => {})
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
