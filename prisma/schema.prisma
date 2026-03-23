@@ -65,6 +65,18 @@ model FloorInventory {
   @@unique([date, scratchTicketId])
 }
 
+model DailySummary {
+  id                Int      @id @default(autoincrement())
+  date              DateTime @db.Date @unique
+  lotterySales      Int      @default(0)
+  lotteryRedemption Int      @default(0)
+  scratchRedemption Int      @default(0)
+  sportsSales       Int      @default(0)
+  sportsRedemption  Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 model ScratchInventoryLog {
   id              Int           @id @default(autoincrement())
   scratchTicketId Int

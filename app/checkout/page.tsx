@@ -19,6 +19,14 @@ type CheckoutData = {
   rows: Row[]
 }
 
+type Summary = {
+  lotterySales: number
+  lotteryRedemption: number
+  scratchRedemption: number
+  sportsSales: number
+  sportsRedemption: number
+}
+
 function toTaipeiDateStr(d: Date) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(d)
 }
@@ -28,15 +36,26 @@ export default function CheckoutPage() {
   const [data, setData] = useState<CheckoutData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [summary, setSummary] = useState<Summary>({
+    lotterySales: 0, lotteryRedemption: 0,
+    scratchRedemption: 0,
+    sportsSales: 0, sportsRedemption: 0,
+  })
+  const [editingKey, setEditingKey] = useState<keyof Summary | null>(null)
+  const [editingVal, setEditingVal] = useState('')
 
   const load = async (d: string) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/checkout?date=${d}`)
-      const json = await res.json()
+      const [checkoutRes, summaryRes] = await Promise.all([
+        fetch(`/api/checkout?date=${d}`),
+        fetch(`/api/daily-summary?date=${d}`),
+      ])
+      const json = await checkoutRes.json()
       if (json.error) throw new Error(json.error)
       setData(json)
+      setSummary(await summaryRes.json())
     } catch (e) {
       setError(String(e))
     } finally {
@@ -49,6 +68,24 @@ export default function CheckoutPage() {
   const handleDateChange = (d: string) => {
     setDate(d)
     load(d)
+  }
+
+  const startEdit = (key: keyof Summary) => {
+    setEditingKey(key)
+    setEditingVal(String(summary[key]))
+  }
+
+  const commitEdit = () => {
+    if (!editingKey) return
+    const num = Math.max(0, parseInt(editingVal) || 0)
+    const updated = { ...summary, [editingKey]: num }
+    setSummary(updated)
+    setEditingKey(null)
+    fetch('/api/daily-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, ...updated }),
+    })
   }
 
   // Group rows by price
@@ -196,6 +233,85 @@ export default function CheckoutPage() {
               <span className="text-amber-700 font-semibold">${grandTotal.toLocaleString()}</span>
             </div>
           )}
+
+          {/* Daily summary */}
+          {(() => {
+            const scratchNet = grandTotal - summary.scratchRedemption
+            const lotteryNet = summary.lotterySales - summary.lotteryRedemption
+            const sportsNet = summary.sportsSales - summary.sportsRedemption
+            const grandNet = lotteryNet + scratchNet + sportsNet
+
+            const SummaryCell = ({ field }: { field: keyof Summary }) => {
+              const isEditing = editingKey === field
+              return isEditing ? (
+                <input
+                  type="number" min="0" autoFocus
+                  className="w-24 text-right font-semibold text-gray-900 border-b-2 border-amber-400 focus:outline-none bg-transparent"
+                  value={editingVal}
+                  onChange={e => setEditingVal(e.target.value)}
+                  onBlur={commitEdit}
+                  onKeyDown={e => { if (e.key === 'Enter') commitEdit() }}
+                />
+              ) : (
+                <span
+                  className="w-24 text-right font-semibold text-gray-900 cursor-pointer hover:text-amber-700"
+                  onClick={() => startEdit(field)}
+                >
+                  {summary[field].toLocaleString()}
+                </span>
+              )
+            }
+
+            const NetVal = ({ v }: { v: number }) => (
+              <span className={`font-bold text-lg ${v > 0 ? 'text-gray-900' : v < 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                {v.toLocaleString()}
+              </span>
+            )
+
+            return (
+              <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+                <table className="border-collapse text-sm w-full">
+                  <thead>
+                    <tr className="bg-amber-100">
+                      <th colSpan={2} className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">彩券</th>
+                      <th colSpan={2} className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">刮刮樂</th>
+                      <th colSpan={2} className="border-b border-r border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">運彩</th>
+                      <th className="border-b border-amber-200 px-4 py-2 text-amber-950 font-bold text-center">總計</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">銷售</td>
+                      <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="lotterySales" /></td>
+                      <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">銷售</td>
+                      <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right font-semibold text-gray-900">{grandTotal.toLocaleString()}</td>
+                      <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">銷售</td>
+                      <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="sportsSales" /></td>
+                      <td className="border-b border-amber-100 px-4 py-2.5 text-center" rowSpan={3}>
+                        <NetVal v={grandNet} />
+                      </td>
+                    </tr>
+                    <tr className="bg-amber-50/40">
+                      <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">兌獎</td>
+                      <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="lotteryRedemption" /></td>
+                      <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">兌獎</td>
+                      <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="scratchRedemption" /></td>
+                      <td className="border-b border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">兌獎</td>
+                      <td className="border-b border-r border-amber-200 px-3 py-2.5 text-right"><SummaryCell field="sportsRedemption" /></td>
+                    </tr>
+                    <tr className="bg-white">
+                      <td className="border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">總計</td>
+                      <td className="border-r border-amber-200 px-3 py-2.5 text-right"><NetVal v={lotteryNet} /></td>
+                      <td className="border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">總計</td>
+                      <td className="border-r border-amber-200 px-3 py-2.5 text-right"><NetVal v={scratchNet} /></td>
+                      <td className="border-r border-amber-100 px-3 py-2.5 text-amber-800 font-semibold text-xs">總計</td>
+                      <td className="border-r border-amber-200 px-3 py-2.5 text-right"><NetVal v={sportsNet} /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>
