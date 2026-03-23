@@ -520,7 +520,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* === Main summary table === */}
-          <table className="border-collapse text-sm w-full">
+          <div className="overflow-x-auto">
+          <table className="border-collapse text-sm w-full min-w-[600px]">
             <thead>
               <tr className="bg-amber-50 border-b border-amber-300">
                 <th className="px-2 py-2 border-r border-amber-200 w-10"></th>
@@ -530,8 +531,7 @@ export default function CheckoutPage() {
                 <th className="px-3 py-2 border-r border-amber-200 text-center font-bold text-amber-950">總計</th>
                 <th className="px-3 py-2 border-r border-amber-200 text-center font-bold text-amber-950">應有現金</th>
                 <th className="px-3 py-2 border-r border-amber-200 text-center font-bold text-amber-950">實際現金</th>
-                <th className="px-3 py-2 border-r border-amber-200 text-center font-bold text-amber-950">差異</th>
-                <th className="px-3 py-2 text-center font-bold text-amber-700">額外</th>
+                <th className="px-3 py-2 text-center font-bold text-amber-950">差異</th>
               </tr>
             </thead>
             <tbody>
@@ -551,13 +551,8 @@ export default function CheckoutPage() {
                 <td className="px-3 py-2 border-r border-amber-200 text-right font-bold text-lg" rowSpan={3} style={{ verticalAlign: 'middle' }}>
                   <span className="font-bold text-lg text-gray-900">{actualCash.toLocaleString()}</span>
                 </td>
-                <td className="px-3 py-2 border-r border-amber-200 text-right" rowSpan={3} style={{ verticalAlign: 'middle' }}>
-                  <span className={`font-bold text-lg ${diff === 0 ? 'text-gray-400' : diff > 0 ? 'text-green-600' : 'text-red-600'}`}>{diff > 0 ? '+' : ''}{diff.toLocaleString()}</span>
-                </td>
                 <td className="px-3 py-2 text-right" rowSpan={3} style={{ verticalAlign: 'middle' }}>
-                  <span className={`font-semibold text-base ${extraTotal >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-                    {extraTotal !== 0 ? (extraTotal > 0 ? '+' : '') + extraTotal.toLocaleString() : '—'}
-                  </span>
+                  <span className={`font-bold text-lg ${diff === 0 ? 'text-gray-400' : diff > 0 ? 'text-green-600' : 'text-red-600'}`}>{diff > 0 ? '+' : ''}{diff.toLocaleString()}</span>
                 </td>
               </tr>
               {/* 兌獎 */}
@@ -599,17 +594,14 @@ export default function CheckoutPage() {
                 <td className="px-1 py-1 border-r border-amber-200">
                   <input type="text" inputMode="numeric" className="w-20 text-sm px-1 py-0.5 text-center border border-amber-200 rounded focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white" value={getSummaryVal('cashCoins')} onChange={e => setSummaryEdits(prev => ({ ...prev, cashCoins: e.target.value }))} onBlur={() => commitSummaryField('cashCoins')} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} />
                 </td>
-                <td className="px-2 py-1.5 border-r border-amber-200 text-xs text-amber-600 text-right whitespace-nowrap">實際現金</td>
-                <td colSpan={2} className="px-3 py-1.5 text-right whitespace-nowrap">
-                  <span className="font-bold text-gray-900 text-base">{actualCash.toLocaleString()}</span>
-                  <span className="ml-3 text-xs text-amber-700">差異</span>
-                  <span className={`ml-1 font-bold ${diff === 0 ? 'text-gray-400' : diff > 0 ? 'text-green-600' : 'text-red-600'}`}>{diff > 0 ? '+' : ''}{diff.toLocaleString()}</span>
-                  <span className="ml-4 text-xs text-amber-700">總營業額</span>
-                  <span className="ml-1 font-bold text-amber-950 text-lg">{totalRevenue.toLocaleString()}</span>
+                <td colSpan={3} className="px-3 py-1.5 text-right whitespace-nowrap">
+                  <span className="text-xs text-amber-700">總營業額</span>
+                  <span className="ml-2 font-bold text-amber-950 text-lg">{totalRevenue.toLocaleString()}</span>
                 </td>
               </tr>
             </tbody>
           </table>
+          </div>
 
         </div>
       )}
