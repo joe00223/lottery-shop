@@ -22,22 +22,23 @@ function toTaipeiDateStr(d: Date) {
 }
 
 function buildSlots(items: { id: number; name: string; amount: number }[], tpl: TplItem[]): Slot[] {
-  const savedByName = new Map(items.map(i => [i.name, i]))
-  const tplNames = new Set(tpl.map(t => t.name))
   const result: Slot[] = []
+  const usedIds = new Set<number>()
 
-  // Template items first — use saved value if exists, otherwise show name with empty amount
+  // Template items first — match by name (first unused), otherwise show template default
   for (const t of tpl) {
-    const saved = savedByName.get(t.name)
-    result.push(saved
-      ? { id: saved.id, name: saved.name, amount: String(saved.amount) }
-      : { name: t.name, amount: t.amount !== 0 ? String(t.amount) : '' }
-    )
+    const saved = items.find(i => i.name === t.name && !usedIds.has(i.id))
+    if (saved) {
+      usedIds.add(saved.id)
+      result.push({ id: saved.id, name: saved.name, amount: String(saved.amount) })
+    } else {
+      result.push({ name: t.name, amount: t.amount !== 0 ? String(t.amount) : '' })
+    }
   }
 
-  // Non-template saved items after
+  // All remaining saved items (including duplicates of template names)
   for (const item of items) {
-    if (!tplNames.has(item.name)) result.push({ id: item.id, name: item.name, amount: String(item.amount) })
+    if (!usedIds.has(item.id)) result.push({ id: item.id, name: item.name, amount: String(item.amount) })
   }
 
   while (result.length < MIN_SLOTS) result.push({ name: '', amount: '' })
