@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 type Ticket = { id: number; name: string; price: number }
-type CellData = { unopened: number; opened: number; onDisplay: number }
+type CellData = { unopened: number; opened: number; onDisplay: number; restockSheets: number }
 type Field = 'unopened' | 'opened' | 'onDisplay'
 type EditingCell = { date: string; ticketId: number; field: Field; value: string } | null
 
@@ -60,7 +60,7 @@ export default function FloorInventoryPage() {
     const map: Record<string, CellData> = {}
     for (const [date, records] of Object.entries(d)) {
       for (const r of records as (CellData & { scratchTicketId: number })[]) {
-        map[`${date}__${r.scratchTicketId}`] = { unopened: r.unopened, opened: r.opened, onDisplay: r.onDisplay }
+        map[`${date}__${r.scratchTicketId}`] = { unopened: r.unopened, opened: r.opened, onDisplay: r.onDisplay, restockSheets: r.restockSheets ?? 0 }
       }
     }
     setData(map)
@@ -156,7 +156,7 @@ export default function FloorInventoryPage() {
 
     const key = `${date}__${ticketId}`
     setData(prev => {
-      const current = prev[key] ?? { unopened: 0, opened: 0, onDisplay: 0 }
+      const current = prev[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0 }
       const updated = { ...current, [field]: num }
       fetch('/api/floor-inventory', {
         method: 'POST',
@@ -208,7 +208,7 @@ export default function FloorInventoryPage() {
       >
         {isEditing ? (
           <input
-            type="number" min="0" autoFocus
+            type="text" inputMode="numeric" autoFocus
             className="w-full px-1 py-2 text-center text-sm focus:outline-none bg-amber-100"
             value={editing.value}
             onChange={e => setEditing(ed => ed ? { ...ed, value: e.target.value } : ed)}
@@ -216,9 +216,13 @@ export default function FloorInventoryPage() {
             onKeyDown={e => {
               if (e.key === 'Escape') { setEditing(null); return }
               if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitAndMove(editing, e.shiftKey ? 'left' : 'right'); return }
-              if (e.key === 'ArrowRight') { e.preventDefault(); commitAndMove(editing, 'right') }
-              else if (e.key === 'ArrowLeft') { e.preventDefault(); commitAndMove(editing, 'left') }
-              else if (e.key === 'ArrowDown') { e.preventDefault(); commitAndMove(editing, 'down') }
+              if (e.key === 'ArrowRight') {
+                const inp = e.target as HTMLInputElement
+                if (inp.selectionStart === inp.value.length) { e.preventDefault(); commitAndMove(editing, 'right') }
+              } else if (e.key === 'ArrowLeft') {
+                const inp = e.target as HTMLInputElement
+                if (inp.selectionStart === 0) { e.preventDefault(); commitAndMove(editing, 'left') }
+              } else if (e.key === 'ArrowDown') { e.preventDefault(); commitAndMove(editing, 'down') }
               else if (e.key === 'ArrowUp') { e.preventDefault(); commitAndMove(editing, 'up') }
             }}
           />

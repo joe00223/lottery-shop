@@ -36,24 +36,29 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    const key = {
+      date_scratchTicketId: {
+        date: new Date(body.date),
+        scratchTicketId: body.scratchTicketId,
+      },
+    }
+    // Only update fields that are explicitly provided
+    const update: Record<string, number> = {}
+    if (body.unopened !== undefined) update.unopened = body.unopened
+    if (body.opened !== undefined) update.opened = body.opened
+    if (body.onDisplay !== undefined) update.onDisplay = body.onDisplay
+    if (body.restockSheets !== undefined) update.restockSheets = body.restockSheets
+
     const record = await prisma.floorInventory.upsert({
-      where: {
-        date_scratchTicketId: {
-          date: new Date(body.date),
-          scratchTicketId: body.scratchTicketId,
-        },
-      },
-      update: {
-        unopened: body.unopened ?? 0,
-        opened: body.opened ?? 0,
-        onDisplay: body.onDisplay ?? 0,
-      },
+      where: key,
+      update,
       create: {
         date: new Date(body.date),
         scratchTicketId: body.scratchTicketId,
         unopened: body.unopened ?? 0,
         opened: body.opened ?? 0,
         onDisplay: body.onDisplay ?? 0,
+        restockSheets: body.restockSheets ?? 0,
       },
     })
     return NextResponse.json(record)
