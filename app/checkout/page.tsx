@@ -613,70 +613,77 @@ export default function CheckoutPage() {
               <span style={{ fontSize: '11px' }}>{date}</span>
             </div>
 
-            {/* Scratch ticket results per denomination — 票名為列，昨日/補/今日/銷售為欄 */}
-            {grouped.map(([price, rows]) => {
-              const orderedRows = getOrderedRows(parseInt(price), rows)
-              const totalSold = rows.reduce((s, r) => s + r.sold, 0)
-              const totalAmt = totalSold * parseInt(price)
-              const p = '1px 4px'
-              return (
-                <div key={price} style={{ marginBottom: '5px' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '1px' }}>刮刮樂 ${parseInt(price).toLocaleString()}</div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #aaa', borderTop: '1px solid #000' }}>
-                        <th style={{ textAlign: 'left', padding: p }}>名稱</th>
-                        <th style={{ textAlign: 'right', padding: p }}>昨日</th>
-                        <th style={{ textAlign: 'right', padding: p }}>補張</th>
-                        <th style={{ textAlign: 'right', padding: p }}>今日</th>
-                        <th style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>銷售</th>
-                      </tr>
-                    </thead>
+            {/* 額外項目（左）＋ 刮刮樂（右）並排 */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '4px' }}>
+
+              {/* 左：額外項目 */}
+              {filledSlots.length > 0 && (
+                <div style={{ flexShrink: 0 }}>
+                  <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', marginBottom: '1px' }}>額外項目</div>
+                  <table style={{ borderCollapse: 'collapse' }}>
                     <tbody>
-                      {orderedRows.map(r => (
-                        <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: p }}>{r.name}</td>
-                          <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.yesterdayDisplay}</td>
-                          <td style={{ textAlign: 'right', padding: p, color: r.supplement > 0 ? '#000' : '#999' }}>{r.supplement > 0 ? `+${r.supplement}` : r.supplement}</td>
-                          <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.todayDisplay}</td>
-                          <td style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>{r.sold}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold' }}>
-                        <td colSpan={4} style={{ padding: p }}>小計</td>
-                        <td style={{ textAlign: 'right', padding: p }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
+                      {filledSlots.map((s, i) => {
+                        const amt = parseInt(s.amount) || 0
+                        return (
+                          <tr key={i}>
+                            <td style={{ paddingRight: '6px', whiteSpace: 'nowrap' }}>{s.name}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
+                          </tr>
+                        )
+                      })}
+                      <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
+                        <td style={{ paddingRight: '6px' }}>小計</td>
+                        <td style={{ textAlign: 'right' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
                       </tr>
-                    </tfoot>
+                    </tbody>
                   </table>
                 </div>
-              )
-            })}
+              )}
 
-            {/* 額外項目明細 — width:auto 不撐滿，項目名稱緊跟金額 */}
-            {filledSlots.length > 0 && (
-              <div style={{ marginBottom: '4px' }}>
-                <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', marginBottom: '1px' }}>額外項目</div>
-                <table style={{ borderCollapse: 'collapse' }}>
-                  <tbody>
-                    {filledSlots.map((s, i) => {
-                      const amt = parseInt(s.amount) || 0
-                      return (
-                        <tr key={i}>
-                          <td style={{ paddingRight: '6px', whiteSpace: 'nowrap' }}>{s.name}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
-                        </tr>
-                      )
-                    })}
-                    <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
-                      <td style={{ paddingRight: '6px' }}>小計</td>
-                      <td style={{ textAlign: 'right' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              {/* 右：刮刮樂各幣別 */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {grouped.map(([price, rows]) => {
+                  const orderedRows = getOrderedRows(parseInt(price), rows)
+                  const totalSold = rows.reduce((s, r) => s + r.sold, 0)
+                  const totalAmt = totalSold * parseInt(price)
+                  const p = '0 2px'
+                  return (
+                    <div key={price} style={{ marginBottom: '3px' }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: '1px' }}>刮刮樂 ${parseInt(price).toLocaleString()}</div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid #aaa', borderTop: '1px solid #000' }}>
+                            <th style={{ textAlign: 'left', padding: p }}>名稱</th>
+                            <th style={{ textAlign: 'right', padding: p }}>昨日</th>
+                            <th style={{ textAlign: 'right', padding: p }}>補張</th>
+                            <th style={{ textAlign: 'right', padding: p }}>今日</th>
+                            <th style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>銷售</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {orderedRows.map(r => (
+                            <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
+                              <td style={{ padding: p }}>{r.name}</td>
+                              <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.yesterdayDisplay}</td>
+                              <td style={{ textAlign: 'right', padding: p, color: r.supplement > 0 ? '#000' : '#999' }}>{r.supplement > 0 ? `+${r.supplement}` : r.supplement}</td>
+                              <td style={{ textAlign: 'right', padding: p, color: '#555' }}>{r.todayDisplay}</td>
+                              <td style={{ textAlign: 'right', padding: p, fontWeight: 'bold' }}>{r.sold}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold' }}>
+                            <td colSpan={4} style={{ padding: p }}>小計</td>
+                            <td style={{ textAlign: 'right', padding: p }}>{totalSold}張 ${totalAmt.toLocaleString()}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )
+                })}
               </div>
-            )}
+
+            </div>
 
             {/* 主彙總表：彩券/刮刮樂/運彩 × 銷售/兌獎/淨額，右側欄位 rowspan=3 */}
             {(() => {
@@ -760,7 +767,7 @@ export default function CheckoutPage() {
 
       <style>{`
         @media print {
-          @page { size: A5 portrait; margin: 6mm 6mm 6mm 14mm; }
+          @page { size: A5 portrait; margin: 6mm 6mm 6mm 20mm; }
           body { background: white !important; min-height: 0 !important; }
           nav { display: none !important; }
           main {
