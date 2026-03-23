@@ -649,111 +649,81 @@ export default function CheckoutPage() {
               )
             })}
 
-            {/* 彩券/刮刮樂/運彩 */}
-            <div style={{ marginTop: '5px', marginBottom: '4px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #000' }}>
-                    <th style={{ textAlign: 'left', paddingRight: '8px', width: '32px' }}></th>
-                    <th style={{ textAlign: 'right', paddingRight: '8px' }}>彩券</th>
-                    <th style={{ textAlign: 'right', paddingRight: '8px' }}>刮刮樂</th>
-                    <th style={{ textAlign: 'right', paddingRight: '8px' }}>運彩</th>
-                    <th style={{ textAlign: 'right', fontWeight: 'bold' }}>小計</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {([
-                    { label: '銷售', vals: [summary.lotterySales, grandTotal, summary.sportsSales] as number[], bold: false },
-                    { label: '兌獎', vals: [summary.lotteryRedemption, summary.scratchRedemption, summary.sportsRedemption] as number[], bold: false },
-                    { label: '淨額', vals: [lotteryNet, scratchNet, sportsNet] as number[], bold: true },
-                  ]).map(row => (
-                    <tr key={row.label} style={row.bold ? { borderTop: '1px solid #aaa', fontWeight: 'bold' } : { borderBottom: '1px solid #eee' }}>
-                      <td style={{ color: '#555', paddingRight: '8px' }}>{row.label}</td>
-                      {row.vals.map((v, i) => <td key={i} style={{ textAlign: 'right', paddingRight: '8px' }}>{v.toLocaleString()}</td>)}
-                      <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{row.vals.reduce((a, b) => a + b, 0).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  <tr style={{ borderTop: '1px solid #aaa', background: '#f9f9f9' }}>
-                    <td style={{ color: '#555', paddingRight: '8px', paddingTop: '2px' }}>應有</td>
-                    <td colSpan={3} style={{ textAlign: 'right', paddingRight: '8px', paddingTop: '2px', color: '#555' }}>
-                      淨額 {grandNet.toLocaleString()} ＋ 額外 {extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: '2px' }}>{cashTotal.toLocaleString()}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* 額外項目 */}
-            {filledSlots.length > 0 && (
-              <div style={{ marginBottom: '4px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            {/* 主彙總表：彩券/刮刮樂/運彩 × 銷售/兌獎/淨額，右側欄位 rowspan=3 */}
+            {(() => {
+              const C: React.CSSProperties = { padding: '2px 4px', borderRight: '1px solid #bbb' }
+              const R: React.CSSProperties = { ...C, textAlign: 'right' }
+              const RB: React.CSSProperties = { ...R, fontWeight: 'bold' }
+              const Rlast: React.CSSProperties = { padding: '2px 4px', textAlign: 'right' }
+              const label: React.CSSProperties = { padding: '2px 3px', color: '#555', whiteSpace: 'nowrap' }
+              return (
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '4px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #000' }}>
-                      <th style={{ textAlign: 'left', fontWeight: 'bold' }}>額外項目</th>
-                      <th style={{ textAlign: 'right', fontWeight: 'bold' }}>金額</th>
+                    <tr style={{ borderTop: '2px solid #000', borderBottom: '1px solid #000' }}>
+                      <th colSpan={2} style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>彩券</th>
+                      <th colSpan={2} style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>刮刮樂</th>
+                      <th colSpan={2} style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>運彩</th>
+                      <th style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>總計</th>
+                      <th style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>應有現金</th>
+                      <th style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>實際現金</th>
+                      <th style={{ ...C, textAlign: 'center', fontWeight: 'bold' }}>差異</th>
+                      <th style={{ ...Rlast, textAlign: 'center', fontWeight: 'bold' }}>額外</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filledSlots.map((s, i) => {
-                      const amt = parseInt(s.amount) || 0
-                      return (
-                        <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ paddingRight: '8px' }}>{s.name}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{amt > 0 ? '+' : ''}{amt.toLocaleString()}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ borderTop: '1px solid #888', fontWeight: 'bold' }}>
-                      <td>小計</td>
-                      <td style={{ textAlign: 'right' }}>{extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}</td>
+                    {/* 銷售 row */}
+                    <tr style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={label}>銷售</td>
+                      <td style={R}>{summary.lotterySales.toLocaleString()}</td>
+                      <td style={label}>銷售</td>
+                      <td style={R}>{grandTotal.toLocaleString()}</td>
+                      <td style={label}>銷售</td>
+                      <td style={R}>{summary.sportsSales.toLocaleString()}</td>
+                      <td style={{ ...RB, verticalAlign: 'middle' }} rowSpan={3}>{grandNet.toLocaleString()}</td>
+                      <td style={{ ...RB, verticalAlign: 'middle' }} rowSpan={3}>{cashTotal.toLocaleString()}</td>
+                      <td style={{ ...RB, verticalAlign: 'middle' }} rowSpan={3}>{actualCash.toLocaleString()}</td>
+                      <td style={{ ...RB, verticalAlign: 'middle' }} rowSpan={3}>{diff > 0 ? '+' : ''}{diff.toLocaleString()}</td>
+                      <td style={{ ...Rlast, verticalAlign: 'middle' }} rowSpan={3}>{extraTotal !== 0 ? (extraTotal > 0 ? '+' : '') + extraTotal.toLocaleString() : '—'}</td>
                     </tr>
-                  </tfoot>
+                    {/* 兌獎 row */}
+                    <tr style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={label}>兌獎</td>
+                      <td style={R}>{summary.lotteryRedemption.toLocaleString()}</td>
+                      <td style={label}>兌獎</td>
+                      <td style={R}>{summary.scratchRedemption.toLocaleString()}</td>
+                      <td style={label}>兌獎</td>
+                      <td style={R}>{summary.sportsRedemption.toLocaleString()}</td>
+                    </tr>
+                    {/* 淨額 row */}
+                    <tr style={{ borderBottom: '2px solid #000', fontWeight: 'bold' }}>
+                      <td style={label}>淨額</td>
+                      <td style={R}>{lotteryNet.toLocaleString()}</td>
+                      <td style={label}>淨額</td>
+                      <td style={R}>{scratchNet.toLocaleString()}</td>
+                      <td style={label}>淨額</td>
+                      <td style={R}>{sportsNet.toLocaleString()}</td>
+                    </tr>
+                    {/* 點鈔 row */}
+                    <tr>
+                      <td style={label}>1000元</td>
+                      <td style={R}>{summary.cash1000}</td>
+                      <td style={label}>500元</td>
+                      <td style={R}>{summary.cash500}</td>
+                      <td style={label}>100元</td>
+                      <td style={R}>{summary.cash100}</td>
+                      <td style={{ ...C, color: '#555' }}>銅板</td>
+                      <td style={R}>{summary.cashCoins.toLocaleString()}</td>
+                      <td style={{ ...R, color: '#555' }}>實際現金</td>
+                      <td style={{ ...Rlast, fontWeight: 'bold' }} colSpan={2}>
+                        {actualCash.toLocaleString()}
+                        <span style={{ marginLeft: '10px', color: '#555', fontWeight: 'normal' }}>總營業額</span>
+                        <span style={{ marginLeft: '4px', fontWeight: 'bold' }}>{totalRevenue.toLocaleString()}</span>
+                      </td>
+                    </tr>
+                  </tbody>
                 </table>
-              </div>
-            )}
-
-            {/* 點鈔 / 合計 */}
-            <div style={{ borderTop: '2px solid #000', paddingTop: '4px', marginTop: '3px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #aaa' }}>
-                    <th style={{ textAlign: 'left', fontWeight: 'bold', paddingRight: '8px', width: '32px' }}>點鈔</th>
-                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>1000</th>
-                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>500</th>
-                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>100</th>
-                    <th style={{ textAlign: 'center', paddingRight: '6px' }}>銅板</th>
-                    <th style={{ textAlign: 'right', fontWeight: 'bold' }}>實際現金</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ color: '#555' }}>張數</td>
-                    <td style={{ textAlign: 'center' }}>{summary.cash1000}</td>
-                    <td style={{ textAlign: 'center' }}>{summary.cash500}</td>
-                    <td style={{ textAlign: 'center' }}>{summary.cash100}</td>
-                    <td style={{ textAlign: 'center' }}>{summary.cashCoins}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold' }} rowSpan={2}>{actualCash.toLocaleString()}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: '#555' }}>金額</td>
-                    <td style={{ textAlign: 'center' }}>{(summary.cash1000 * 1000).toLocaleString()}</td>
-                    <td style={{ textAlign: 'center' }}>{(summary.cash500 * 500).toLocaleString()}</td>
-                    <td style={{ textAlign: 'center' }}>{(summary.cash100 * 100).toLocaleString()}</td>
-                    <td style={{ textAlign: 'center' }}>—</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr style={{ borderTop: '1px solid #aaa', fontWeight: 'bold' }}>
-                    <td colSpan={2} style={{ paddingTop: '2px' }}>差異 {diff > 0 ? '+' : ''}{diff.toLocaleString()}</td>
-                    <td colSpan={2} style={{ textAlign: 'center', paddingTop: '2px', color: '#555', fontWeight: 'normal' }}>應有現金 {cashTotal.toLocaleString()}</td>
-                    <td colSpan={2} style={{ textAlign: 'right', paddingTop: '2px', fontSize: '11px' }}>總營業額 {totalRevenue.toLocaleString()}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+              )
+            })()}
 
           </div>
         </div>
