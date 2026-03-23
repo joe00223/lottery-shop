@@ -77,6 +77,14 @@ model DailySummary {
   updatedAt         DateTime @updatedAt
 }
 
+model ExtraItemTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String
+  amount    Int      @default(0)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model DailySummaryItem {
   id        Int      @id @default(autoincrement())
   date      DateTime @db.Date

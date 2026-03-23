@@ -3,31 +3,16 @@
 import { useState, useEffect, useRef } from 'react'
 
 type Row = {
-  id: number
-  name: string
-  price: number
-  sheetsPerBook: number
-  yesterdayDisplay: number
-  supplement: number
-  todayDisplay: number
-  sold: number
+  id: number; name: string; price: number; sheetsPerBook: number
+  yesterdayDisplay: number; supplement: number; todayDisplay: number; sold: number
 }
-
-type CheckoutData = {
-  date: string
-  yesterday: string
-  rows: Row[]
-}
-
+type CheckoutData = { date: string; yesterday: string; rows: Row[] }
 type Summary = {
-  lotterySales: number
-  lotteryRedemption: number
-  scratchRedemption: number
-  sportsSales: number
-  sportsRedemption: number
+  lotterySales: number; lotteryRedemption: number
+  scratchRedemption: number; sportsSales: number; sportsRedemption: number
 }
-
 type Slot = { id?: number; name: string; amount: string }
+type TplItem = { id: number; name: string; amount: number }
 
 const MIN_SLOTS = 8
 
@@ -35,8 +20,14 @@ function toTaipeiDateStr(d: Date) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(d)
 }
 
-function itemsToSlots(items: { id: number; name: string; amount: number }[]): Slot[] {
-  const filled: Slot[] = items.map(i => ({ id: i.id, name: i.name, amount: String(i.amount) }))
+function buildSlots(items: { id: number; name: string; amount: number }[], tpl: TplItem[]): Slot[] {
+  if (items.length > 0) {
+    const filled: Slot[] = items.map(i => ({ id: i.id, name: i.name, amount: String(i.amount) }))
+    while (filled.length < Math.max(MIN_SLOTS, tpl.length)) filled.push({ name: '', amount: '' })
+    return filled
+  }
+  // no saved items → use template
+  const filled: Slot[] = tpl.map(t => ({ name: t.name, amount: t.amount !== 0 ? String(t.amount) : '' }))
   while (filled.length < MIN_SLOTS) filled.push({ name: '', amount: '' })
   return filled
 }
@@ -47,14 +38,16 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [summary, setSummary] = useState<Summary>({
-    lotterySales: 0, lotteryRedemption: 0,
-    scratchRedemption: 0,
-    sportsSales: 0, sportsRedemption: 0,
+    lotterySales: 0, lotteryRedemption: 0, scratchRedemption: 0, sportsSales: 0, sportsRedemption: 0,
   })
   const [editingKey, setEditingKey] = useState<keyof Summary | null>(null)
   const [editingVal, setEditingVal] = useState('')
-  const [slots, setSlots] = useState<Slot[]>(itemsToSlots([]))
+  const [slots, setSlots] = useState<Slot[]>(buildSlots([], []))
   const [knownNames, setKnownNames] = useState<string[]>([])
+  const [template, setTemplate] = useState<TplItem[]>([])
+  const [showTplEditor, setShowTplEditor] = useState(false)
+  const [tplNew, setTplNew] = useState({ name: '', amount: '' })
+  const [ticketOrder, setTicketOrder] = useState<Record<number, number[]>>({})
   const inputRefs = useRef<(HTMLInputElement | null)[][]>([])
   const navigating = useRef(false)
   const pendingFocus = useRef<[number, number] | null>(null)
@@ -67,9 +60,48 @@ export default function CheckoutPage() {
     }
   }, [slots.length])
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('floorInventoryTicketOrder')
+      if (saved) setTicketOrder(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  const loadTemplate = async () => {
+    const res = await fetch('/api/extra-item-template')
+    const tpl = await res.json()
+    setTemplate(tpl)
+    return tpl as TplItem[]
+  }
+
   const load = async (d: string) => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
+    try {
+      const [checkoutRes, summaryRes, itemsRes, tpl] = await Promise.all([
+        fetch(`/api/checkout?date=${d}`),
+        fetch(`/api/daily-summary?date=${d}`),
+        fetch(`/api/daily-summary-items?date=${d}`),
+        loadTemplate(),
+      ])
+      const json = await checkoutRes.json()
+      if (json.error) throw new Error(json.error)
+      setData(json)
+      setSummary(await summaryRes.json())
+      const itemsJson = await itemsRes.json()
+      setSlots(buildSlots(itemsJson.items ?? [], tpl))
+      setKnownNames(itemsJson.names ?? [])
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load(date) }, [])
+
+  const handleDateChange = async (d: string) => {
+    setDate(d)
+    setLoading(true); setError(null)
     try {
       const [checkoutRes, summaryRes, itemsRes] = await Promise.all([
         fetch(`/api/checkout?date=${d}`),
@@ -81,43 +113,31 @@ export default function CheckoutPage() {
       setData(json)
       setSummary(await summaryRes.json())
       const itemsJson = await itemsRes.json()
-      setSlots(itemsToSlots(itemsJson.items ?? []))
+      setSlots(buildSlots(itemsJson.items ?? [], template))
       setKnownNames(itemsJson.names ?? [])
-    } catch (e) {
-      setError(String(e))
-    } finally {
-      setLoading(false)
-    }
+    } catch (e) { setError(String(e)) }
+    finally { setLoading(false) }
   }
 
-  useEffect(() => { load(date) }, [])
-
-  const handleDateChange = (d: string) => { setDate(d); load(d) }
-
+  // Summary editing
   const startEdit = (key: keyof Summary) => { setEditingKey(key); setEditingVal(String(summary[key])) }
   const commitEdit = () => {
     if (!editingKey) return
     const num = Math.max(0, parseInt(editingVal) || 0)
     const updated = { ...summary, [editingKey]: num }
-    setSummary(updated)
-    setEditingKey(null)
-    fetch('/api/daily-summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, ...updated }),
-    })
+    setSummary(updated); setEditingKey(null)
+    fetch('/api/daily-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, ...updated }) })
   }
 
-  const updateSlot = (idx: number, field: 'name' | 'amount', value: string) => {
+  // Slots
+  const updateSlot = (idx: number, field: 'name' | 'amount', value: string) =>
     setSlots(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
-  }
 
   const saveSlot = async (idx: number) => {
     if (navigating.current) { navigating.current = false; return }
     const slot = slots[idx]
     const name = slot.name.trim()
     const amount = parseInt(slot.amount)
-
     if (!name || isNaN(amount)) {
       if (slot.id) {
         await fetch(`/api/daily-summary-items/${slot.id}`, { method: 'DELETE' })
@@ -125,20 +145,11 @@ export default function CheckoutPage() {
       }
       return
     }
-
     if (slot.id) {
-      fetch(`/api/daily-summary-items/${slot.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, amount }),
-      })
+      fetch(`/api/daily-summary-items/${slot.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, amount }) })
       if (!knownNames.includes(name)) setKnownNames(prev => [...prev, name].sort())
     } else {
-      const res = await fetch('/api/daily-summary-items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, name, amount }),
-      })
+      const res = await fetch('/api/daily-summary-items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, name, amount }) })
       const item = await res.json()
       setSlots(prev => prev.map((s, i) => i === idx ? { ...s, id: item.id } : s))
       if (!knownNames.includes(name)) setKnownNames(prev => [...prev, name].sort())
@@ -159,19 +170,45 @@ export default function CheckoutPage() {
     } else if (dir === 'down') {
       if (idx < slots.length - 1) inputRefs.current[idx + 1]?.[col]?.focus()
       else { addSlot(); pendingFocus.current = [idx + 1, col] }
-    } else if (dir === 'up') {
-      if (idx > 0) inputRefs.current[idx - 1]?.[col]?.focus()
-    }
+    } else if (idx > 0) inputRefs.current[idx - 1]?.[col]?.focus()
+  }
+
+  // Template CRUD
+  const addTplItem = async () => {
+    const name = tplNew.name.trim()
+    if (!name) return
+    const amount = parseInt(tplNew.amount) || 0
+    const res = await fetch('/api/extra-item-template', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, amount }) })
+    const item = await res.json()
+    setTemplate(prev => [...prev, item])
+    setTplNew({ name: '', amount: '' })
+  }
+
+  const updateTplItem = async (id: number, field: 'name' | 'amount', value: string) => {
+    const parsed = field === 'amount' ? (parseInt(value) || 0) : value
+    setTemplate(prev => prev.map(t => t.id === id ? { ...t, [field]: parsed } : t))
+    fetch(`/api/extra-item-template/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [field]: parsed }) })
+  }
+
+  const deleteTplItem = async (id: number) => {
+    await fetch(`/api/extra-item-template/${id}`, { method: 'DELETE' })
+    setTemplate(prev => prev.filter(t => t.id !== id))
+  }
+
+  // Computed
+  const getOrderedRows = (price: number, rows: Row[]) => {
+    const order = ticketOrder[price]
+    if (!order) return rows
+    return [...rows].sort((a, b) => {
+      const ai = order.indexOf(a.id); const bi = order.indexOf(b.id)
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+    })
   }
 
   const grouped = data
-    ? Object.entries(
-        data.rows.reduce<Record<number, Row[]>>((acc, r) => {
-          if (!acc[r.price]) acc[r.price] = []
-          acc[r.price].push(r)
-          return acc
-        }, {})
-      ).sort(([a], [b]) => parseInt(a) - parseInt(b))
+    ? Object.entries(data.rows.reduce<Record<number, Row[]>>((acc, r) => {
+        if (!acc[r.price]) acc[r.price] = []; acc[r.price].push(r); return acc
+      }, {})).sort(([a], [b]) => parseInt(a) - parseInt(b))
     : []
 
   const FIELDS = [
@@ -181,45 +218,31 @@ export default function CheckoutPage() {
     { key: 'sold' as const, label: '銷售張數' },
   ]
 
-  const grandTotal = grouped.reduce((sum, [price, rows]) => {
-    const sheets = rows.reduce((s, r) => s + r.sold, 0)
-    return sum + sheets * parseInt(price)
-  }, 0)
+  const grandTotal = grouped.reduce((sum, [price, rows]) => sum + rows.reduce((s, r) => s + r.sold, 0) * parseInt(price), 0)
   const grandSheets = data ? data.rows.reduce((s, r) => s + r.sold, 0) : 0
-
-  const extraTotal = slots.reduce((s, slot) => {
-    const n = parseInt(slot.amount)
-    return s + (slot.name.trim() && !isNaN(n) ? n : 0)
-  }, 0)
+  const extraTotal = slots.reduce((s, slot) => { const n = parseInt(slot.amount); return s + (slot.name.trim() && !isNaN(n) ? n : 0) }, 0)
 
   const SummaryCell = ({ field }: { field: keyof Summary }) => {
     const isEditing = editingKey === field
     return isEditing ? (
-      <input
-        type="number" min="0" autoFocus
+      <input type="number" min="0" autoFocus
         className="w-24 text-right font-semibold text-gray-900 border-b-2 border-amber-400 focus:outline-none bg-transparent"
-        value={editingVal}
-        onChange={e => setEditingVal(e.target.value)}
-        onBlur={commitEdit}
-        onKeyDown={e => { if (e.key === 'Enter') commitEdit() }}
+        value={editingVal} onChange={e => setEditingVal(e.target.value)}
+        onBlur={commitEdit} onKeyDown={e => { if (e.key === 'Enter') commitEdit() }}
       />
     ) : (
-      <span className="w-24 text-right font-semibold text-gray-900 cursor-pointer hover:text-amber-700"
-        onClick={() => startEdit(field)}>
+      <span className="w-24 text-right font-semibold text-gray-900 cursor-pointer hover:text-amber-700" onClick={() => startEdit(field)}>
         {summary[field].toLocaleString()}
       </span>
     )
   }
 
   const NetVal = ({ v }: { v: number }) => (
-    <span className={`font-bold text-lg ${v > 0 ? 'text-gray-900' : v < 0 ? 'text-red-600' : 'text-gray-400'}`}>
-      {v.toLocaleString()}
-    </span>
+    <span className={`font-bold text-lg ${v > 0 ? 'text-gray-900' : v < 0 ? 'text-red-600' : 'text-gray-400'}`}>{v.toLocaleString()}</span>
   )
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6 flex-wrap">
         <h1 className="text-2xl font-bold text-amber-950">結帳表</h1>
         <div className="flex items-center gap-2">
@@ -232,41 +255,34 @@ export default function CheckoutPage() {
         {data && <span className="text-xs text-amber-500">比較 {data.yesterday} → {data.date}</span>}
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-mono break-all mb-4">{error}</div>
-      )}
+      {error && <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-mono break-all mb-4">{error}</div>}
 
       {loading ? (
         <div className="text-amber-700 text-center py-16">載入中...</div>
       ) : !data || data.rows.length === 0 ? (
-        <div className="text-center text-amber-300 py-16 bg-white border border-amber-200 rounded-xl">
-          請先在「刮刮樂」頁面新增種類
-        </div>
+        <div className="text-center text-amber-300 py-16 bg-white border border-amber-200 rounded-xl">請先在「刮刮樂」頁面新增種類</div>
       ) : (
         <div className="flex gap-6 items-start">
 
-          {/* Left: main content */}
+          {/* Left */}
           <div className="flex-1 min-w-0 space-y-6">
             {grouped.map(([price, rows]) => {
               const priceNum = parseInt(price)
+              const orderedRows = getOrderedRows(priceNum, rows)
               const totalSheets = rows.reduce((s, r) => s + r.sold, 0)
               const totalAmount = totalSheets * priceNum
               return (
                 <div key={price}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      ${priceNum.toLocaleString()}
-                    </span>
+                    <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">${priceNum.toLocaleString()}</span>
                   </div>
                   <div className="overflow-x-auto rounded-xl border border-amber-200 shadow-sm">
                     <table className="border-collapse text-sm">
                       <thead>
                         <tr>
                           <th className="border-b border-r border-amber-300 bg-amber-50 px-4 py-2 text-amber-900 font-bold text-left min-w-[80px]">欄位</th>
-                          {rows.map(r => (
-                            <th key={r.id} className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-950 font-bold text-center min-w-[72px]">
-                              {r.name}
-                            </th>
+                          {orderedRows.map(r => (
+                            <th key={r.id} className="border-b border-r border-amber-200 bg-amber-100 px-3 py-1.5 text-amber-950 font-bold text-center min-w-[72px]">{r.name}</th>
                           ))}
                           <th className="border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-700 font-bold text-center min-w-[72px]">小計</th>
                         </tr>
@@ -278,7 +294,7 @@ export default function CheckoutPage() {
                           return (
                             <tr key={f.key} className={fi % 2 === 0 ? 'bg-white' : 'bg-amber-50/40'}>
                               <td className="border-b border-r border-amber-200 px-4 py-2 text-amber-900 font-semibold text-xs">{f.label}</td>
-                              {rows.map(r => {
+                              {orderedRows.map(r => {
                                 const v = r[f.key]
                                 let cls = 'text-gray-700 font-medium'
                                 if (f.key === 'supplement') cls = v > 0 ? 'text-green-600 font-medium' : v < 0 ? 'text-red-500 font-medium' : 'text-gray-400'
@@ -295,9 +311,7 @@ export default function CheckoutPage() {
                                     <div className={`font-bold ${rowTotal > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{rowTotal} 張</div>
                                     <div className={`text-xs ${totalAmount > 0 ? 'text-amber-700' : 'text-gray-400'}`}>${totalAmount.toLocaleString()}</div>
                                   </div>
-                                ) : (
-                                  <span className="text-gray-500 font-medium">{rowTotal}</span>
-                                )}
+                                ) : <span className="text-gray-500 font-medium">{rowTotal}</span>}
                               </td>
                             </tr>
                           )
@@ -309,14 +323,12 @@ export default function CheckoutPage() {
               )
             })}
 
-            {/* Grand total */}
             <div className="rounded-xl border border-amber-300 bg-amber-50 px-6 py-4 flex items-center gap-6">
               <span className="font-bold text-amber-950 text-base">總計</span>
               <span className="font-bold text-amber-950">{grandSheets} 張</span>
               <span className="text-amber-700 font-semibold">${grandTotal.toLocaleString()}</span>
             </div>
 
-            {/* 彩券/刮刮樂/運彩 summary */}
             {(() => {
               const scratchNet = grandTotal - summary.scratchRedemption
               const lotteryNet = summary.lotterySales - summary.lotteryRedemption
@@ -369,14 +381,66 @@ export default function CheckoutPage() {
           {/* Right: extra items panel */}
           <div className="w-56 flex-shrink-0">
             <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden sticky top-4">
+
+              {/* Header */}
               <div className="px-3 py-2.5 bg-amber-100 border-b border-amber-200 flex items-center justify-between">
                 <span className="font-bold text-amber-950 text-sm">額外項目</span>
-                {extraTotal !== 0 && (
-                  <span className={`text-sm font-bold ${extraTotal >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-                    {extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {extraTotal !== 0 && (
+                    <span className={`text-sm font-bold ${extraTotal >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                      {extraTotal >= 0 ? '+' : ''}{extraTotal.toLocaleString()}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setShowTplEditor(v => !v)}
+                    className={`text-xs px-2 py-0.5 rounded font-medium border transition-colors ${showTplEditor ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:bg-amber-50'}`}
+                  >公版</button>
+                </div>
               </div>
+
+              {/* Template editor */}
+              {showTplEditor && (
+                <div className="border-b border-amber-200 bg-amber-50">
+                  <div className="px-3 py-1.5 text-xs text-amber-700 font-semibold">公版設定（自動帶入新日期）</div>
+                  <div className="divide-y divide-amber-100">
+                    {template.map(t => (
+                      <div key={t.id} className="flex items-center gap-1 px-2 py-1">
+                        <input
+                          className="flex-1 min-w-0 text-xs px-1.5 py-1 border border-amber-200 rounded bg-white focus:outline-none focus:border-amber-400"
+                          defaultValue={t.name}
+                          onBlur={e => updateTplItem(t.id, 'name', e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          className="w-16 text-xs px-1.5 py-1 text-right border border-amber-200 rounded bg-white focus:outline-none focus:border-amber-400"
+                          defaultValue={t.amount}
+                          onBlur={e => updateTplItem(t.id, 'amount', e.target.value)}
+                        />
+                        <button onClick={() => deleteTplItem(t.id)} className="text-red-400 hover:text-red-600 text-xs font-bold px-1">×</button>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-1 px-2 py-1.5">
+                      <input
+                        placeholder="項目名稱"
+                        className="flex-1 min-w-0 text-xs px-1.5 py-1 border border-amber-300 rounded bg-white focus:outline-none focus:border-amber-400"
+                        value={tplNew.name}
+                        onChange={e => setTplNew(v => ({ ...v, name: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') addTplItem() }}
+                      />
+                      <input
+                        type="number" placeholder="預設值"
+                        className="w-16 text-xs px-1.5 py-1 text-right border border-amber-300 rounded bg-white focus:outline-none focus:border-amber-400"
+                        value={tplNew.amount}
+                        onChange={e => setTplNew(v => ({ ...v, amount: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') addTplItem() }}
+                      />
+                      <button onClick={addTplItem} className="text-amber-700 hover:text-amber-900 text-xs font-bold px-1">＋</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Slots */}
               <datalist id="extra-names">
                 {knownNames.map(n => <option key={n} value={n} />)}
               </datalist>
@@ -386,8 +450,7 @@ export default function CheckoutPage() {
                   return (
                     <div key={idx} className="flex items-center gap-1 px-2 py-1.5">
                       <input
-                        list="extra-names"
-                        placeholder="項目"
+                        list="extra-names" placeholder="項目"
                         className="flex-1 min-w-0 text-sm px-1.5 py-1 border border-transparent rounded focus:outline-none focus:border-amber-300 bg-transparent hover:bg-amber-50"
                         value={slot.name}
                         ref={el => { inputRefs.current[idx] = [el, inputRefs.current[idx]?.[1] ?? null] }}
@@ -403,8 +466,7 @@ export default function CheckoutPage() {
                         }}
                       />
                       <input
-                        type="number"
-                        placeholder="0"
+                        type="number" placeholder="0"
                         className={`w-20 text-sm px-1.5 py-1 text-right border border-transparent rounded focus:outline-none focus:border-amber-300 bg-transparent hover:bg-amber-50 ${
                           parseInt(slot.amount) < 0 ? 'text-red-600 font-semibold' :
                           parseInt(slot.amount) > 0 ? 'text-gray-900 font-semibold' : 'text-gray-400'
@@ -427,8 +489,7 @@ export default function CheckoutPage() {
                 })}
               </div>
               <div className="px-2 py-2 bg-amber-50 border-t border-amber-200">
-                <button onClick={addSlot}
-                  className="w-full py-1 text-xs text-amber-700 font-semibold hover:bg-amber-100 rounded-lg transition-colors">
+                <button onClick={addSlot} className="w-full py-1 text-xs text-amber-700 font-semibold hover:bg-amber-100 rounded-lg transition-colors">
                   ＋ 新增一列
                 </button>
               </div>
