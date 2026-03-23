@@ -772,8 +772,13 @@ export default function CheckoutPage() {
 
       <style>{`
         @media print {
-          @page { size: A5 portrait; margin: 6mm 4mm 6mm 24mm; }
-          body { background: white !important; min-height: 0 !important; }
+          @page { size: A5 portrait; margin: 12mm 5mm 5mm 28mm; }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            background: white !important;
+          }
           nav { display: none !important; }
           main {
             height: 0 !important;
@@ -785,7 +790,7 @@ export default function CheckoutPage() {
             display: block !important;
             position: absolute;
             top: 0; left: 0;
-            width: 122mm;
+            width: 100%;
             color: #000 !important;
             filter: grayscale(1);
           }
