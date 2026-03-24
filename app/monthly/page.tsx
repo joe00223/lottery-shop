@@ -164,7 +164,8 @@ export default function MonthlyPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: '', income: 0, expense: 0, note: '' }),
     })
-    setTemplates(prev => [...prev, await res.json()])
+    const newTpl = await res.json()
+    setTemplates(prev => [...prev, newTpl])
   }
 
   const updateTpl = async (id: number, field: keyof Template, value: string) => {
