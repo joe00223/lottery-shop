@@ -82,7 +82,7 @@ export async function GET(req: Request) {
       return {
         date: dateStr,
         lotterySales: s?.lotterySales ?? 0,
-        scratchSales: s?.scratchSales || scratchSales,
+        scratchSales: s?.scratchSales != null ? s.scratchSales : scratchSales,
         scratchSheets: s?.scratchSheets ?? 0,
         sportsSales: s?.sportsSales ?? 0,
         virtualSports: s?.virtualSports ?? 0,
