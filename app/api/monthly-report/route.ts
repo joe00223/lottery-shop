@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     if (!year || !month) return NextResponse.json({ error: 'year and month required' }, { status: 400 })
 
     const firstDay = new Date(`${year}-${String(month).padStart(2, '0')}-01`)
-    const lastDay = new Date(year, month, 0) // last day of month
+    const lastDay = new Date(year, month, 0)
     const dayBefore = new Date(firstDay.getTime() - 86400000)
 
     const [tickets, summaries, floorRecords, extraItems] = await Promise.all([
@@ -32,7 +32,6 @@ export async function GET(req: Request) {
       }),
     ])
 
-    // floor map: dateStr -> ticketId -> record
     const floorMap: Record<string, Record<number, (typeof floorRecords)[0]>> = {}
     for (const r of floorRecords) {
       const key = toDateStr(r.date)
@@ -40,18 +39,15 @@ export async function GET(req: Request) {
       floorMap[key][r.scratchTicketId] = r
     }
 
-    // summary map
     const summaryMap: Record<string, (typeof summaries)[0]> = {}
     for (const s of summaries) summaryMap[toDateStr(s.date)] = s
 
-    // extra items map
     const extraMap: Record<string, number> = {}
     for (const item of extraItems) {
       const key = toDateStr(item.date)
       extraMap[key] = (extraMap[key] ?? 0) + item.amount
     }
 
-    // build all days in month
     const days: string[] = []
     const cur = new Date(firstDay)
     while (cur <= lastDay) {
@@ -59,11 +55,14 @@ export async function GET(req: Request) {
       cur.setDate(cur.getDate() + 1)
     }
 
+    // Per-ticket monthly accumulator
+    const ticketSold: Record<number, number> = {}
+    for (const t of tickets) ticketSold[t.id] = 0
+
     const rows = days.map(dateStr => {
       const yesterday = toDateStr(new Date(new Date(dateStr).getTime() - 86400000))
       const s = summaryMap[dateStr]
 
-      // scratch sales calculation (same formula as checkout API)
       let scratchSales = 0
       for (const t of tickets) {
         const td = floorMap[dateStr]?.[t.id]
@@ -76,6 +75,7 @@ export async function GET(req: Request) {
         const todayDisplay = td?.onDisplay ?? 0
         const sold = yesterdayDisplay + supplement + restockSheets - todayDisplay
         scratchSales += sold * t.price
+        ticketSold[t.id] = (ticketSold[t.id] ?? 0) + sold
       }
 
       return {
@@ -88,7 +88,23 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json({ year, month, rows })
+    // Scratch breakdown per ticket
+    const scratchBreakdown = tickets
+      .map(t => {
+        const soldSheets = ticketSold[t.id] ?? 0
+        const soldAmount = soldSheets * t.price
+        return {
+          id: t.id,
+          name: t.name,
+          price: t.price,
+          soldSheets,
+          soldAmount,
+          commission: Math.round(soldAmount * 0.09),
+        }
+      })
+      .filter(t => t.soldSheets !== 0)
+
+    return NextResponse.json({ year, month, rows, scratchBreakdown })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
