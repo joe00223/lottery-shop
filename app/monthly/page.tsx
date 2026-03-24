@@ -301,6 +301,16 @@ export default function MonthlyPage() {
 
   return (
     <div>
+      <style>{`
+        #monthly-print { display: none; }
+        @media print {
+          body * { visibility: hidden; }
+          #monthly-print { display: block; }
+          #monthly-print, #monthly-print * { visibility: visible; }
+          #monthly-print { position: fixed; top: 0; left: 0; width: 100%; }
+          @page { size: A4 portrait; margin: 10mm; }
+        }
+      `}</style>
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <h1 className="text-2xl font-bold text-amber-950">月報表</h1>
         <div className="flex items-center gap-2">
@@ -309,12 +319,18 @@ export default function MonthlyPage() {
           <button onClick={nextMonth} className="px-3 py-1.5 rounded bg-white border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-50">下月 →</button>
         </div>
         {loading && <span className="text-amber-400 text-sm">載入中...</span>}
-        <button
-          onClick={() => { setEditMode(v => !v); setLeftEdit(null) }}
-          className={`ml-auto px-3 py-1.5 rounded text-sm font-semibold border transition-colors ${editMode ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-800 border-amber-300 hover:bg-amber-50'}`}
-        >
-          {editMode ? '✓ 編輯中' : '編輯'}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="px-3 py-1.5 rounded text-sm font-semibold border bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+          >列印</button>
+          <button
+            onClick={() => { setEditMode(v => !v); setLeftEdit(null) }}
+            className={`px-3 py-1.5 rounded text-sm font-semibold border transition-colors ${editMode ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-800 border-amber-300 hover:bg-amber-50'}`}
+          >
+            {editMode ? '✓ 編輯中' : '編輯'}
+          </button>
+        </div>
       </div>
 
       {error && <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-mono break-all mb-4">{error}</div>}
@@ -499,6 +515,110 @@ export default function MonthlyPage() {
               </table>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ── 列印版面（螢幕隱藏，列印顯示）── */}
+      {!loading && (
+        <div id="monthly-print" style={{ fontFamily: 'sans-serif', fontSize: '9px' }}>
+          <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '13px', marginBottom: '6px' }}>
+            {year} 年 {String(month).padStart(2, '0')} 月　月報表
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+            {/* 左：每日銷售 */}
+            <table style={{ borderCollapse: 'collapse', flex: '1 1 0', minWidth: 0 }}>
+              <thead>
+                <tr style={{ background: '#eee', borderBottom: '2px solid #000' }}>
+                  {['日期','彩券','刮刮樂','運彩','虛擬運彩','總營業額'].map(h => (
+                    <th key={h} style={{ border: '1px solid #999', padding: '2px 4px', textAlign: h === '日期' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => {
+                  const rev = totalRevenue(r)
+                  const d = new Date(r.date + 'T12:00:00')
+                  const dow = d.getDay()
+                  const hasData = r.lotterySales || r.scratchSales || r.sportsSales || r.virtualSports
+                  return (
+                    <tr key={r.date} style={{ opacity: hasData ? 1 : 0.3 }}>
+                      <td style={{ border: '1px solid #bbb', padding: '1px 3px', whiteSpace: 'nowrap', color: dow === 0 ? '#c00' : dow === 6 ? '#00c' : '#000' }}>
+                        {r.date.slice(5)}({weekDay[dow]})
+                      </td>
+                      {[r.lotterySales, r.scratchSales, r.sportsSales, r.virtualSports].map((v, i) => (
+                        <td key={i} style={{ border: '1px solid #bbb', padding: '1px 4px', textAlign: 'right' }}>{v > 0 ? v.toLocaleString() : '—'}</td>
+                      ))}
+                      <td style={{ border: '1px solid #bbb', padding: '1px 4px', textAlign: 'right', fontWeight: 'bold' }}>{rev > 0 ? rev.toLocaleString() : '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: '#eee', borderTop: '2px solid #000', fontWeight: 'bold' }}>
+                  <td style={{ border: '1px solid #999', padding: '2px 3px' }}>月合計</td>
+                  {[total.lotterySales, total.scratchSales, total.sportsSales, total.virtualSports].map((v, i) => (
+                    <td key={i} style={{ border: '1px solid #999', padding: '2px 4px', textAlign: 'right' }}>{v > 0 ? v.toLocaleString() : '—'}</td>
+                  ))}
+                  <td style={{ border: '1px solid #999', padding: '2px 4px', textAlign: 'right', fontWeight: 'bold' }}>{grandRevenue > 0 ? grandRevenue.toLocaleString() : '—'}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            {/* 右：項目明細 + 刮刮樂 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '200px', flexShrink: 0 }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr style={{ background: '#eee', borderBottom: '2px solid #000' }}>
+                    {['項目','收入','支出','備註'].map(h => (
+                      <th key={h} style={{ border: '1px solid #999', padding: '2px 3px', textAlign: h === '項目' || h === '備註' ? 'left' : 'right' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {allItems.map(it => (
+                    <tr key={it.id}>
+                      <td style={{ border: '1px solid #bbb', padding: '1px 3px', whiteSpace: 'nowrap', fontWeight: it.fixed ? 'bold' : 'normal' }}>{it.name}</td>
+                      <td style={{ border: '1px solid #bbb', padding: '1px 3px', textAlign: 'right' }}>{it.income > 0 ? it.income.toLocaleString() : '—'}</td>
+                      <td style={{ border: '1px solid #bbb', padding: '1px 3px', textAlign: 'right' }}>{it.expense > 0 ? it.expense.toLocaleString() : '—'}</td>
+                      <td style={{ border: '1px solid #bbb', padding: '1px 3px', fontSize: '8px', color: '#555' }}>{it.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: '#eee', borderTop: '2px solid #000', fontWeight: 'bold' }}>
+                    <td style={{ border: '1px solid #999', padding: '2px 3px' }}>合計</td>
+                    <td style={{ border: '1px solid #999', padding: '2px 3px', textAlign: 'right' }}>{commTotalIncome > 0 ? commTotalIncome.toLocaleString() : '—'}</td>
+                    <td style={{ border: '1px solid #999', padding: '2px 3px', textAlign: 'right' }}>{commTotalExpense > 0 ? commTotalExpense.toLocaleString() : '—'}</td>
+                    <td style={{ border: '1px solid #999', padding: '2px 3px', textAlign: 'right' }}>
+                      {commTotalIncome - commTotalExpense !== 0 && `淨 ${commTotalIncome - commTotalExpense > 0 ? '+' : ''}${(commTotalIncome - commTotalExpense).toLocaleString()}`}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr style={{ background: '#eee', borderBottom: '2px solid #000' }}>
+                    <th style={{ border: '1px solid #999', padding: '2px 3px', textAlign: 'center' }} colSpan={2}>刮刮樂明細</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ border: '1px solid #bbb', padding: '1px 3px' }}>月總張數</td>
+                    <td style={{ border: '1px solid #bbb', padding: '1px 3px', textAlign: 'right', fontWeight: 'bold' }}>{scratchTotalSheets.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: '1px solid #bbb', padding: '1px 3px' }}>收入</td>
+                    <td style={{ border: '1px solid #bbb', padding: '1px 3px', textAlign: 'right', fontWeight: 'bold' }}>{total.scratchSales.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: '1px solid #bbb', padding: '1px 3px' }}>傭金 (9%)</td>
+                    <td style={{ border: '1px solid #bbb', padding: '1px 3px', textAlign: 'right', fontWeight: 'bold' }}>{Math.round(total.scratchSales * 0.09).toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

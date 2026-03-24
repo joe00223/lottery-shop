@@ -65,7 +65,6 @@ export async function GET(req: Request) {
       const s = summaryMap[dateStr]
 
       let scratchSales = 0
-      let scratchSheets = 0
       for (const t of tickets) {
         const td = floorMap[dateStr]?.[t.id]
         const yd = floorMap[yesterday]?.[t.id]
@@ -77,7 +76,6 @@ export async function GET(req: Request) {
         const todayDisplay = td?.onDisplay ?? 0
         const sold = yesterdayDisplay + supplement + restockSheets - todayDisplay
         scratchSales += sold * t.price
-        scratchSheets += sold
         ticketSold[t.id] = (ticketSold[t.id] ?? 0) + sold
       }
 
@@ -85,7 +83,7 @@ export async function GET(req: Request) {
         date: dateStr,
         lotterySales: s?.lotterySales ?? 0,
         scratchSales,
-        scratchSheets,
+        scratchSheets: s?.scratchSheets ?? 0,
         sportsSales: s?.sportsSales ?? 0,
         virtualSports: s?.virtualSports ?? 0,
         extra: extraMap[dateStr] ?? 0,

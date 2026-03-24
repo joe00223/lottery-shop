@@ -91,6 +91,13 @@ export default function CheckoutPage() {
     return tpl as TplItem[]
   }
 
+  const saveSheets = (d: string, rows: Row[]) => {
+    const sheets = rows.reduce((s, r) => s + r.sold, 0)
+    if (sheets > 0) {
+      fetch('/api/daily-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: d, scratchSheets: sheets }) })
+    }
+  }
+
   const load = async (d: string) => {
     setLoading(true); setError(null)
     try {
@@ -103,6 +110,7 @@ export default function CheckoutPage() {
       const json = await checkoutRes.json()
       if (json.error) throw new Error(json.error)
       setData(json)
+      saveSheets(d, json.rows)
       const sd = await summaryRes.json()
       setSummary({ lotterySales: sd.lotterySales ?? 0, lotteryRedemption: sd.lotteryRedemption ?? 0, scratchRedemption: sd.scratchRedemption ?? 0, sportsSales: sd.sportsSales ?? 0, sportsRedemption: sd.sportsRedemption ?? 0, cash1000: sd.cash1000 ?? 0, cash500: sd.cash500 ?? 0, cash100: sd.cash100 ?? 0, cashCoins: sd.cashCoins ?? 0 })
       const itemsJson = await itemsRes.json()
@@ -129,6 +137,7 @@ export default function CheckoutPage() {
       const json = await checkoutRes.json()
       if (json.error) throw new Error(json.error)
       setData(json)
+      saveSheets(d, json.rows)
       const sd = await summaryRes.json()
       setSummary({ lotterySales: sd.lotterySales ?? 0, lotteryRedemption: sd.lotteryRedemption ?? 0, scratchRedemption: sd.scratchRedemption ?? 0, sportsSales: sd.sportsSales ?? 0, sportsRedemption: sd.sportsRedemption ?? 0, cash1000: sd.cash1000 ?? 0, cash500: sd.cash500 ?? 0, cash100: sd.cash100 ?? 0, cashCoins: sd.cashCoins ?? 0 })
       const itemsJson = await itemsRes.json()
