@@ -89,20 +89,18 @@ export async function GET(req: Request) {
     })
 
     // Scratch breakdown per ticket
-    const scratchBreakdown = tickets
-      .map(t => {
-        const soldSheets = ticketSold[t.id] ?? 0
-        const soldAmount = soldSheets * t.price
-        return {
-          id: t.id,
-          name: t.name,
-          price: t.price,
-          soldSheets,
-          soldAmount,
-          commission: Math.round(soldAmount * 0.09),
-        }
-      })
-      .filter(t => t.soldSheets !== 0)
+    const scratchBreakdown = tickets.map(t => {
+      const soldSheets = ticketSold[t.id] ?? 0
+      const soldAmount = soldSheets * t.price
+      return {
+        id: t.id,
+        name: t.name,
+        price: t.price,
+        soldSheets,
+        soldAmount,
+        commission: Math.round(soldAmount * 0.09),
+      }
+    })
 
     return NextResponse.json({ year, month, rows, scratchBreakdown })
   } catch (e) {

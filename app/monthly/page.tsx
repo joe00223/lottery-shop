@@ -37,9 +37,12 @@ export default function MonthlyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Virtual sports editing
-  const [editingDate, setEditingDate] = useState<string | null>(null)
-  const [editingVirtual, setEditingVirtual] = useState('')
+  // Left table edit mode
+  const [editMode, setEditMode] = useState(false)
+  const [leftEdit, setLeftEdit] = useState<{ date: string; field: 'lotterySales' | 'sportsSales' | 'virtualSports'; value: string } | null>(null)
+  type LeftField = 'lotterySales' | 'sportsSales' | 'virtualSports'
+  const LEFT_FIELDS: LeftField[] = ['lotterySales', 'sportsSales', 'virtualSports']
+  const leftRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   // Items table editing
   const [editCell, setEditCell] = useState<{ id: number; field: ItemField } | null>(null)
@@ -88,16 +91,67 @@ export default function MonthlyPage() {
   const prevMonth = () => { if (month === 1) { setYear(y => y - 1); setMonth(12) } else setMonth(m => m - 1) }
   const nextMonth = () => { if (month === 12) { setYear(y => y + 1); setMonth(1) } else setMonth(m => m + 1) }
 
-  // ── Virtual sports ──
-  const commitVirtual = async (date: string) => {
-    const val = Math.max(0, parseInt(editingVirtual) || 0)
-    setRows(prev => prev.map(r => r.date === date ? { ...r, virtualSports: val } : r))
-    setEditingDate(null)
-    await fetch('/api/daily-summary', {
+  // ── Left table editing ──
+  const startLeftEdit = (date: string, field: LeftField) => {
+    const row = rows.find(r => r.date === date)!
+    setLeftEdit({ date, field, value: row[field] === 0 ? '' : String(row[field]) })
+    setTimeout(() => leftRefs.current[`${date}-${field}`]?.focus(), 0)
+  }
+
+  const commitLeft = (date: string, field: LeftField, value: string, move?: { dr: number; dc: number }) => {
+    const val = Math.max(0, parseInt(value) || 0)
+    setRows(prev => prev.map(r => r.date === date ? { ...r, [field]: val } : r))
+    fetch('/api/daily-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, virtualSports: val }),
+      body: JSON.stringify({ date, [field]: val }),
     })
+    if (!move) { setLeftEdit(null); return }
+    const rowIdx = rows.findIndex(r => r.date === date)
+    const colIdx = LEFT_FIELDS.indexOf(field)
+    let nr = rowIdx + move.dr
+    let nc = colIdx + move.dc
+    if (nc >= LEFT_FIELDS.length) { nc = 0; nr++ }
+    if (nc < 0) { nc = LEFT_FIELDS.length - 1; nr-- }
+    if (nr >= 0 && nr < rows.length) {
+      const nextDate = rows[nr].date
+      const nextField = LEFT_FIELDS[nc]
+      setLeftEdit({ date: nextDate, field: nextField, value: rows[nr][nextField] === 0 ? '' : String(rows[nr][nextField]) })
+      setTimeout(() => leftRefs.current[`${nextDate}-${nextField}`]?.focus(), 0)
+    } else {
+      setLeftEdit(null)
+    }
+  }
+
+  const leftCell = (date: string, field: LeftField, row: DayRow) => {
+    const isActive = leftEdit?.date === date && leftEdit.field === field
+    if (editMode) {
+      return isActive ? (
+        <input
+          ref={el => { leftRefs.current[`${date}-${field}`] = el }}
+          type="text" inputMode="numeric"
+          className="w-full px-2 py-2 text-right text-sm bg-amber-100 focus:outline-none tabular-nums"
+          value={leftEdit.value}
+          onChange={e => setLeftEdit(c => c ? { ...c, value: e.target.value } : c)}
+          onBlur={() => commitLeft(date, field, leftEdit.value)}
+          onKeyDown={e => {
+            if (e.key === 'Escape') { setLeftEdit(null); return }
+            if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); commitLeft(date, field, leftEdit.value, { dr: 0, dc: 1 }) }
+            else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); commitLeft(date, field, leftEdit.value, { dr: 0, dc: -1 }) }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); commitLeft(date, field, leftEdit.value, { dr: 1, dc: 0 }) }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); commitLeft(date, field, leftEdit.value, { dr: -1, dc: 0 }) }
+          }}
+        />
+      ) : (
+        <span
+          onClick={() => startLeftEdit(date, field)}
+          className="block px-3 py-2 text-right tabular-nums cursor-pointer hover:bg-amber-100 w-full"
+        >
+          {row[field] > 0 ? row[field].toLocaleString() : <span className="text-gray-300">—</span>}
+        </span>
+      )
+    }
+    return <span className="block px-3 py-2 text-right tabular-nums">{fmt(row[field])}</span>
   }
 
   // ── Items table ──
@@ -256,6 +310,12 @@ export default function MonthlyPage() {
           <button onClick={nextMonth} className="px-3 py-1.5 rounded bg-white border border-amber-300 text-sm font-medium text-amber-900 hover:bg-amber-50">下月 →</button>
         </div>
         {loading && <span className="text-amber-400 text-sm">載入中...</span>}
+        <button
+          onClick={() => { setEditMode(v => !v); setLeftEdit(null) }}
+          className={`ml-auto px-3 py-1.5 rounded text-sm font-semibold border transition-colors ${editMode ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-800 border-amber-300 hover:bg-amber-50'}`}
+        >
+          {editMode ? '✓ 編輯中' : '編輯'}
+        </button>
       </div>
 
       {error && <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-mono break-all mb-4">{error}</div>}
@@ -282,33 +342,19 @@ export default function MonthlyPage() {
                   const rev = totalRevenue(r)
                   const d = new Date(r.date + 'T12:00:00')
                   const dow = d.getDay()
-                  const isEditing = editingDate === r.date
                   return (
-                    <tr key={r.date} className={`border-b border-amber-100 ${!hasData ? 'opacity-30' : i % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'}`}>
+                    <tr key={r.date} className={`border-b border-amber-100 ${!hasData && !editMode ? 'opacity-30' : i % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'}`}>
                       <td className={`px-3 py-2 border-r border-amber-200 font-medium sticky left-0 z-10 whitespace-nowrap text-xs
-                        ${!hasData ? 'bg-white' : i % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'}
+                        ${!hasData && !editMode ? 'bg-white' : i % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'}
                         ${dow === 0 ? 'text-red-600' : dow === 6 ? 'text-blue-600' : 'text-gray-800'}`}>
                         {r.date.slice(5)} ({weekDay[dow]})
                       </td>
-                      <td className="px-3 py-2 border-r border-amber-100 text-right tabular-nums">{fmt(r.lotterySales)}</td>
+                      <td className="px-0 py-0 border-r border-amber-100">{leftCell(r.date, 'lotterySales', r)}</td>
                       <td className="px-3 py-2 border-r border-amber-100 text-right tabular-nums">{fmt(r.scratchSales)}</td>
-                      <td className="px-3 py-2 border-r border-amber-100 text-right tabular-nums">{fmt(r.sportsSales)}</td>
-                      <td className="px-0 py-0 border-r border-amber-100 cursor-pointer"
-                        onClick={() => !isEditing && (setEditingDate(r.date), setEditingVirtual(r.virtualSports === 0 ? '' : String(r.virtualSports)))}>
-                        {isEditing ? (
-                          <input autoFocus type="text" inputMode="numeric"
-                            className="w-full px-3 py-2 text-right text-sm bg-amber-100 focus:outline-none"
-                            value={editingVirtual}
-                            onChange={e => setEditingVirtual(e.target.value)}
-                            onBlur={() => commitVirtual(r.date)}
-                            onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingDate(null) }}
-                          />
-                        ) : (
-                          <span className="block px-3 py-2 text-right hover:bg-amber-50 tabular-nums">{fmt(r.virtualSports)}</span>
-                        )}
-                      </td>
+                      <td className="px-0 py-0 border-r border-amber-100">{leftCell(r.date, 'sportsSales', r)}</td>
+                      <td className="px-0 py-0 border-r border-amber-100">{leftCell(r.date, 'virtualSports', r)}</td>
                       <td className={`px-3 py-2 text-right font-bold tabular-nums ${rev > 0 ? 'text-amber-900' : 'text-gray-300'}`}>
-                        {hasData && rev > 0 ? rev.toLocaleString() : '—'}
+                        {(hasData || editMode) && rev > 0 ? rev.toLocaleString() : '—'}
                       </td>
                     </tr>
                   )
@@ -432,7 +478,7 @@ export default function MonthlyPage() {
             </div>
 
             {/* 刮刮樂明細表 */}
-            {scratchBreakdown.length > 0 && (
+            {scratchBreakdown.length >= 0 && (
               <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
                 <div className="px-3 py-2 bg-amber-100 border-b-2 border-amber-300">
                   <span className="font-bold text-amber-900 text-sm">刮刮樂明細</span>
