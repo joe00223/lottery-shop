@@ -6,6 +6,7 @@ type DayRow = {
   date: string
   lotterySales: number
   scratchSales: number
+  scratchSheets: number
   sportsSales: number
   virtualSports: number
   extra: number
@@ -259,10 +260,8 @@ export default function MonthlyPage() {
   const commTotalIncome = allItems.reduce((s, it) => s + it.income, 0)
   const commTotalExpense = allItems.reduce((s, it) => s + it.expense, 0)
 
-  // Scratch breakdown totals
-  const scratchTotalSheets = scratchBreakdown.reduce((s, t) => s + t.soldSheets, 0)
-  const scratchTotalAmount = scratchBreakdown.reduce((s, t) => s + t.soldAmount, 0)
-  const scratchTotalComm = scratchBreakdown.reduce((s, t) => s + t.commission, 0)
+  // Scratch totals from daily rows
+  const scratchTotalSheets = rows.reduce((s, r) => s + r.scratchSheets, 0)
 
   const weekDay = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -478,41 +477,27 @@ export default function MonthlyPage() {
             </div>
 
             {/* 刮刮樂明細表 */}
-            {scratchBreakdown.length >= 0 && (
-              <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
-                <div className="px-3 py-2 bg-amber-100 border-b-2 border-amber-300">
-                  <span className="font-bold text-amber-900 text-sm">刮刮樂明細</span>
-                </div>
-                <table className="border-collapse text-sm w-full">
-                  <thead>
-                    <tr className="bg-amber-50 border-b border-amber-200 text-amber-700 text-xs font-semibold">
-                      <th className="px-3 py-2 border-r border-amber-100 text-left">名稱</th>
-                      <th className="px-3 py-2 border-r border-amber-100 text-right">張數</th>
-                      <th className="px-3 py-2 border-r border-amber-100 text-right">金額</th>
-                      <th className="px-3 py-2 text-right">傭金 (9%)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {scratchBreakdown.map((t, i) => (
-                      <tr key={t.id} className={`border-b border-amber-100 ${i % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'}`}>
-                        <td className="px-3 py-2 border-r border-amber-100 text-gray-800">{t.name}</td>
-                        <td className="px-3 py-2 border-r border-amber-100 text-right tabular-nums text-gray-700">{t.soldSheets.toLocaleString()}</td>
-                        <td className="px-3 py-2 border-r border-amber-100 text-right tabular-nums text-gray-700">{t.soldAmount.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-green-700 font-semibold">{t.commission.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-amber-100 border-t-2 border-amber-400 font-bold">
-                      <td className="px-3 py-2 text-amber-950">合計</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{scratchTotalSheets.toLocaleString()}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{scratchTotalAmount.toLocaleString()}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-green-700">{scratchTotalComm.toLocaleString()}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+            <div className="rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+              <div className="px-3 py-2 bg-amber-100 border-b-2 border-amber-300">
+                <span className="font-bold text-amber-900 text-sm">刮刮樂明細</span>
               </div>
-            )}
+              <table className="border-collapse text-sm w-full">
+                <thead>
+                  <tr className="bg-amber-50 border-b border-amber-200 text-amber-700 text-xs font-semibold">
+                    <th className="px-3 py-2 border-r border-amber-100 text-right">月總張數</th>
+                    <th className="px-3 py-2 border-r border-amber-100 text-right">收入</th>
+                    <th className="px-3 py-2 text-right">傭金 (9%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-white">
+                    <td className="px-3 py-2.5 border-r border-amber-100 text-right tabular-nums font-semibold">{scratchTotalSheets.toLocaleString()}</td>
+                    <td className="px-3 py-2.5 border-r border-amber-100 text-right tabular-nums font-semibold">{total.scratchSales.toLocaleString()}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-green-700 font-semibold">{Math.round(total.scratchSales * 0.09).toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
           </div>
         </div>

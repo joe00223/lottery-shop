@@ -13,7 +13,8 @@ export async function GET(req: Request) {
     if (!year || !month) return NextResponse.json({ error: 'year and month required' }, { status: 400 })
 
     const firstDay = new Date(`${year}-${String(month).padStart(2, '0')}-01`)
-    const lastDay = new Date(year, month, 0)
+    const daysInMonth = new Date(year, month, 0).getDate()
+    const lastDay = new Date(`${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`)
     const dayBefore = new Date(firstDay.getTime() - 86400000)
 
     const [tickets, summaries, floorRecords, extraItems] = await Promise.all([
@@ -64,6 +65,7 @@ export async function GET(req: Request) {
       const s = summaryMap[dateStr]
 
       let scratchSales = 0
+      let scratchSheets = 0
       for (const t of tickets) {
         const td = floorMap[dateStr]?.[t.id]
         const yd = floorMap[yesterday]?.[t.id]
@@ -75,6 +77,7 @@ export async function GET(req: Request) {
         const todayDisplay = td?.onDisplay ?? 0
         const sold = yesterdayDisplay + supplement + restockSheets - todayDisplay
         scratchSales += sold * t.price
+        scratchSheets += sold
         ticketSold[t.id] = (ticketSold[t.id] ?? 0) + sold
       }
 
@@ -82,6 +85,7 @@ export async function GET(req: Request) {
         date: dateStr,
         lotterySales: s?.lotterySales ?? 0,
         scratchSales,
+        scratchSheets,
         sportsSales: s?.sportsSales ?? 0,
         virtualSports: s?.virtualSports ?? 0,
         extra: extraMap[dateStr] ?? 0,
