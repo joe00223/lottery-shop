@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@media print {
+  nav { display: none !important; }
+}
+
 :root {
   --background: #fffbeb;
   --foreground: #1c1917;
