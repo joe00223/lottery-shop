@@ -40,9 +40,9 @@ export default function MonthlyPage() {
 
   // Left table edit mode
   const [editMode, setEditMode] = useState(false)
-  const [leftEdit, setLeftEdit] = useState<{ date: string; field: 'lotterySales' | 'sportsSales' | 'virtualSports'; value: string } | null>(null)
-  type LeftField = 'lotterySales' | 'sportsSales' | 'virtualSports'
-  const LEFT_FIELDS: LeftField[] = ['lotterySales', 'sportsSales', 'virtualSports']
+  const [leftEdit, setLeftEdit] = useState<{ date: string; field: 'lotterySales' | 'scratchSales' | 'sportsSales' | 'virtualSports'; value: string } | null>(null)
+  type LeftField = 'lotterySales' | 'scratchSales' | 'sportsSales' | 'virtualSports'
+  const LEFT_FIELDS: LeftField[] = ['lotterySales', 'scratchSales', 'sportsSales', 'virtualSports']
   const leftRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   // Items table editing
@@ -308,7 +308,7 @@ export default function MonthlyPage() {
           #monthly-print { display: block; }
           #monthly-print, #monthly-print * { visibility: visible; }
           #monthly-print { position: fixed; top: 0; left: 0; width: 100%; }
-          @page { size: A4 portrait; margin: 10mm; }
+          @page { size: A4 landscape; margin: 10mm; }
         }
       `}</style>
       <div className="flex items-center gap-3 mb-6 flex-wrap">
@@ -365,7 +365,7 @@ export default function MonthlyPage() {
                         {r.date.slice(5)} ({weekDay[dow]})
                       </td>
                       <td className="px-0 py-0 border-r border-amber-100">{leftCell(r.date, 'lotterySales', r)}</td>
-                      <td className="px-3 py-2 border-r border-amber-100 text-right tabular-nums">{fmt(r.scratchSales)}</td>
+                      <td className="px-0 py-0 border-r border-amber-100">{leftCell(r.date, 'scratchSales', r)}</td>
                       <td className="px-0 py-0 border-r border-amber-100">{leftCell(r.date, 'sportsSales', r)}</td>
                       <td className="px-0 py-0 border-r border-amber-100">{leftCell(r.date, 'virtualSports', r)}</td>
                       <td className={`px-3 py-2 text-right font-bold tabular-nums ${rev > 0 ? 'text-amber-900' : 'text-gray-300'}`}>

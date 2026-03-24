@@ -71,6 +71,7 @@ model DailySummary {
   date              DateTime @db.Date @unique
   lotterySales      Int      @default(0)
   lotteryRedemption Int      @default(0)
+  scratchSales      Int      @default(0)
   scratchSheets     Int      @default(0)
   scratchRedemption Int      @default(0)
   sportsSales       Int      @default(0)
