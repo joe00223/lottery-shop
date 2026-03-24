@@ -81,11 +81,9 @@ export async function GET(req: Request) {
       return {
         date: dateStr,
         lotterySales: s?.lotterySales ?? 0,
-        lotteryRedemption: s?.lotteryRedemption ?? 0,
         scratchSales,
-        scratchRedemption: s?.scratchRedemption ?? 0,
         sportsSales: s?.sportsSales ?? 0,
-        sportsRedemption: s?.sportsRedemption ?? 0,
+        virtualSports: s?.virtualSports ?? 0,
         extra: extraMap[dateStr] ?? 0,
       }
     })
