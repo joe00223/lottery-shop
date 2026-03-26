@@ -207,11 +207,12 @@ export default function FloorInventoryPage() {
     const key = `${addBooksDate}__${ticketId}`
     const current = data[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0 }
     const newUnopened = current.unopened + books
+    const newRestockSheets = current.restockSheets + books * sheetsPerBook
     await Promise.all([
       fetch('/api/floor-inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: addBooksDate, scratchTicketId: ticketId, ...current, unopened: newUnopened }),
+        body: JSON.stringify({ date: addBooksDate, scratchTicketId: ticketId, ...current, unopened: newUnopened, restockSheets: newRestockSheets }),
       }),
       fetch('/api/inventory', {
         method: 'POST',
@@ -219,7 +220,7 @@ export default function FloorInventoryPage() {
         body: JSON.stringify({ scratchTicketId: ticketId, type: 'OUT', books, note: `補現場庫存 ${addBooksDate}` }),
       }),
     ])
-    setData(prev => ({ ...prev, [key]: { ...current, unopened: newUnopened } }))
+    setData(prev => ({ ...prev, [key]: { ...current, unopened: newUnopened, restockSheets: newRestockSheets } }))
     addDate(addBooksDate)
     setAddBooksModal(null)
     setAddBooksCount('')
