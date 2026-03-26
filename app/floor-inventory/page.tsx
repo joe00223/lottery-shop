@@ -329,7 +329,7 @@ export default function FloorInventoryPage() {
                           日期
                         </th>
                         {orderedTickets.map(t => (
-                          <th key={t.id} colSpan={3}
+                          <th key={t.id} colSpan={FIELDS.length}
                             draggable
                             onDragStart={() => handleDragStart(parseInt(price), t.id)}
                             onDragOver={e => handleDragOver(e, t.id)}
