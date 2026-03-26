@@ -619,12 +619,12 @@ export default function CheckoutPage() {
       {/* ── Print area ── */}
       {data && (
         <div id="print-area" style={{ display: 'none' }}>
-          <div style={{ fontFamily: 'sans-serif', fontSize: '15px', color: '#000', lineHeight: 1.4 }}>
+          <div style={{ fontFamily: 'sans-serif', fontSize: '12px', color: '#000', lineHeight: 1.35 }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '2px', marginBottom: '5px' }}>
               <span style={{ fontSize: '16px', fontWeight: 'bold' }}>結帳表</span>
-              <span style={{ fontSize: '15px' }}>{date}</span>
+              <span style={{ fontSize: '12px' }}>{date}</span>
             </div>
 
             {/* ── 上半區：外框包住額外項目（左）＋ 刮刮樂（右）＋ 彙總表 ── */}
