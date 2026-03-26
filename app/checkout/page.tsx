@@ -623,7 +623,7 @@ export default function CheckoutPage() {
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #000', paddingBottom: '2px', marginBottom: '5px' }}>
-              <span style={{ fontSize: '20px', fontWeight: 'bold' }}>結帳表</span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>結帳表</span>
               <span style={{ fontSize: '15px' }}>{date}</span>
             </div>
 
