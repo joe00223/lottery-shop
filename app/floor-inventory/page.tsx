@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 
 type Ticket = { id: number; name: string; price: number; sheetsPerBook: number }
 type CellData = { unopened: number; opened: number; onDisplay: number; restockSheets: number }
-type Field = 'unopened' | 'opened' | 'onDisplay'
+type Field = 'unopened' | 'opened' | 'onDisplay' | 'restockSheets'
 type EditingCell = { date: string; ticketId: number; field: Field; value: string } | null
 
 const FIELDS: { key: Field; label: string }[] = [
   { key: 'unopened', label: '未開封' },
   { key: 'opened', label: '已開封' },
   { key: 'onDisplay', label: '檯面上' },
+  { key: 'restockSheets', label: '補張' },
 ]
 
 function toDateStr(d: Date) {
