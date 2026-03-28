@@ -356,11 +356,15 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                               const finalDrag = { ...drag, endHour: h }
                               setDragging(false)
                               setDrag(null)
+                              const estimatedHeight = employees.length * 36 + 80
+                              const top = window.innerHeight - e.clientY < estimatedHeight
+                                ? e.clientY - estimatedHeight
+                                : e.clientY + 8
                               setPicker({
                                 ...finalDrag,
                                 startHour: Math.min(finalDrag.startHour, finalDrag.endHour),
                                 endHour: Math.max(finalDrag.startHour, finalDrag.endHour),
-                                top: e.clientY + 8,
+                                top: Math.max(8, top),
                                 left: Math.min(e.clientX, window.innerWidth - 160),
                               })
                             }}
