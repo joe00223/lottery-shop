@@ -40,6 +40,8 @@ export default function FloorInventoryPage() {
   const [addBooksModal, setAddBooksModal] = useState<{ ticketId: number; ticketName: string; sheetsPerBook: number } | null>(null)
   const [addBooksDate, setAddBooksDate] = useState(toDateStr(new Date()))
   const [addBooksCount, setAddBooksCount] = useState('')
+  const [showRestock, setShowRestock] = useState(false)
+  const [stockMap, setStockMap] = useState<Record<number, number>>({})
 
   useEffect(() => {
     try {
@@ -53,6 +55,15 @@ export default function FloorInventoryPage() {
     const d = await res.json()
     if (!Array.isArray(d)) throw new Error(d.error || 'tickets error')
     setTickets(d.filter((t: Ticket & { active: boolean }) => t.active))
+  }, [])
+
+  const loadInventory = useCallback(async () => {
+    const res = await fetch('/api/inventory')
+    const d = await res.json()
+    if (!Array.isArray(d)) return
+    const map: Record<number, number> = {}
+    for (const t of d) map[t.id] = t.stock ?? 0
+    setStockMap(map)
   }, [])
 
   const loadFloor = useCallback(async (from: string, to: string) => {
@@ -73,14 +84,14 @@ export default function FloorInventoryPage() {
   const load = useCallback(async (from: string, to: string) => {
     setLoading(true)
     try {
-      await Promise.all([loadTickets(), loadFloor(from, to)])
+      await Promise.all([loadTickets(), loadFloor(from, to), loadInventory()])
       setError(null)
     } catch (e) {
       setError(String(e))
     } finally {
       setLoading(false)
     }
-  }, [loadTickets, loadFloor])
+  }, [loadTickets, loadFloor, loadInventory])
 
   useEffect(() => { const d = last7Days(); load(d.from, d.to) }, [])
 
@@ -153,6 +164,8 @@ export default function FloorInventoryPage() {
     setEditing({ date, ticketId, field, value: String(val) })
   }
 
+  const displayFields = showRestock ? FIELDS : FIELDS.filter(f => f.key !== 'restockSheets')
+
   const commitAndMove = (ed: EditingCell, direction?: 'right' | 'left' | 'up' | 'down') => {
     if (!ed) return
     const { date, ticketId, field, value } = ed
@@ -172,7 +185,7 @@ export default function FloorInventoryPage() {
 
     if (!direction) { setEditing(null); return }
 
-    const cols = orderedAllTickets.flatMap(t => FIELDS.map(f => ({ ticketId: t.id, field: f.key as Field })))
+    const cols = orderedAllTickets.flatMap(t => displayFields.map(f => ({ ticketId: t.id, field: f.key as Field })))
     const colIdx = cols.findIndex(c => c.ticketId === ticketId && c.field === field)
     const dateIdx = dates.indexOf(date)
 
@@ -238,7 +251,8 @@ export default function FloorInventoryPage() {
   const CellInput = ({ date, t, f }: { date: string; t: Ticket; f: typeof FIELDS[number] }) => {
     const isEditing = editing?.date === date && editing?.ticketId === t.id && editing?.field === f.key
     const val = data[`${date}__${t.id}`]?.[f.key] ?? 0
-    const isLast = f.key === FIELDS[FIELDS.length - 1].key
+    const isLast = f.key === displayFields[displayFields.length - 1].key
+    const showX = f.key === 'unopened' && val === 0 && (stockMap[t.id] ?? 0) === 0
     return (
       <td className={`border-b text-center p-0 ${isLast ? 'border-r border-amber-300' : 'border-r border-amber-100'}`}
         onClick={() => !isEditing && startEdit(date, t.id, f.key)}
@@ -264,8 +278,8 @@ export default function FloorInventoryPage() {
             }}
           />
         ) : (
-          <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${val > 0 ? 'text-gray-800 font-semibold' : 'text-gray-300'}`}>
-            {val}
+          <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${showX ? 'text-red-300' : val > 0 ? 'text-gray-800 font-semibold' : 'text-gray-300'}`}>
+            {showX ? '✕' : val}
           </span>
         )}
       </td>
@@ -303,6 +317,10 @@ export default function FloorInventoryPage() {
           <button onClick={confirmPendingDate}
             className="px-3 py-1.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-lg text-sm font-medium hover:bg-amber-200"
           >新增</button>
+          <div className="w-px h-5 bg-amber-200" />
+          <button onClick={() => setShowRestock(r => !r)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${showRestock ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-white border border-amber-300 text-amber-700 hover:bg-amber-50'}`}
+          >補張</button>
         </div>
       </div>
 
@@ -329,7 +347,7 @@ export default function FloorInventoryPage() {
                           日期
                         </th>
                         {orderedTickets.map(t => (
-                          <th key={t.id} colSpan={FIELDS.length}
+                          <th key={t.id} colSpan={displayFields.length}
                             draggable
                             onDragStart={() => handleDragStart(parseInt(price), t.id)}
                             onDragOver={e => handleDragOver(e, t.id)}
@@ -343,14 +361,16 @@ export default function FloorInventoryPage() {
                           >
                             <div className="flex items-center justify-center gap-1.5">
                               <span>{t.name}</span>
-                              <button
-                                draggable={false}
-                                onMouseDown={e => e.stopPropagation()}
-                                onDragStart={e => e.stopPropagation()}
-                                onClick={e => { e.stopPropagation(); openAddBooks(t) }}
-                                className="text-amber-600 hover:text-white hover:bg-amber-500 border border-amber-400 rounded px-1 text-xs font-bold leading-none py-0.5 transition-colors cursor-pointer"
-                                title="補未拆封"
-                              >＋</button>
+                              {showRestock && (
+                                <button
+                                  draggable={false}
+                                  onMouseDown={e => e.stopPropagation()}
+                                  onDragStart={e => e.stopPropagation()}
+                                  onClick={e => { e.stopPropagation(); openAddBooks(t) }}
+                                  className="text-amber-600 hover:text-white hover:bg-amber-500 border border-amber-400 rounded px-1 text-xs font-bold leading-none py-0.5 transition-colors cursor-pointer"
+                                  title="補未拆封"
+                                >＋</button>
+                              )}
                             </div>
                           </th>
                         ))}
@@ -358,9 +378,9 @@ export default function FloorInventoryPage() {
                       </tr>
                       <tr>
                         {orderedTickets.map(t =>
-                          FIELDS.map((f, fi) => (
+                          displayFields.map((f, fi) => (
                             <th key={`${t.id}-${f.key}`}
-                              className={`border-b-2 border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-700 font-semibold text-center text-xs min-w-[64px] ${fi < FIELDS.length - 1 ? 'border-r border-amber-200' : 'border-r border-amber-300'}`}
+                              className={`border-b-2 border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-700 font-semibold text-center text-xs min-w-[64px] ${fi < displayFields.length - 1 ? 'border-r border-amber-200' : 'border-r border-amber-300'}`}
                             >
                               {f.label}
                             </th>
@@ -371,7 +391,7 @@ export default function FloorInventoryPage() {
                     <tbody>
                       {dates.length === 0 ? (
                         <tr>
-                          <td colSpan={orderedTickets.length * 3 + 2} className="text-center text-gray-500 py-8 text-sm">
+                          <td colSpan={orderedTickets.length * displayFields.length + 2} className="text-center text-gray-500 py-8 text-sm">
                             點「+ 今日」新增日期
                           </td>
                         </tr>
@@ -382,7 +402,7 @@ export default function FloorInventoryPage() {
                               {date}
                             </td>
                             {orderedTickets.map(t =>
-                              FIELDS.map(f => <CellInput key={`${t.id}-${f.key}`} date={date} t={t} f={f} />)
+                              displayFields.map(f => <CellInput key={`${t.id}-${f.key}`} date={date} t={t} f={f} />)
                             )}
                             <td className="border-b border-amber-100 px-1 text-center">
                               <button onClick={() => deleteDate(date)} className="text-red-300 hover:text-red-600 text-xs font-bold">×</button>
