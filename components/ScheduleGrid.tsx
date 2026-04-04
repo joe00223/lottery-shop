@@ -255,8 +255,8 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                 日期
               </th>
               {hours.map((h) => (
-                <th key={h} className="w-20 min-w-20 border-b-2 border-r border-gray-600 bg-amber-100 text-base text-amber-900 font-bold p-2 text-center">
-                  {String(h).padStart(2, '0')}:00
+                <th key={h} className="w-24 min-w-24 border-b-2 border-r border-gray-600 bg-amber-100 text-sm text-amber-900 font-bold p-2 text-center">
+                  {String(h).padStart(2, '0')}:00–{String(h + 1).padStart(2, '0')}:00
                 </th>
               ))}
             </tr>
@@ -321,7 +321,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                           ) runSpan++
                         }
 
-                        const CELL_W = 80
+                        const CELL_W = 96
 
                         const isLastRow = rowIndex === rowCount - 1
                         return (
@@ -336,7 +336,7 @@ export default function ScheduleGrid({ storeHours, employees, editing }: Props) 
                             } ${editing && operating ? 'cursor-crosshair' : ''}`}
                             style={{
                               height: '52px',
-                              width: `${CELL_W}px`,
+                              width: '96px',
                               ...(nextSame && cell.employee && !inDrag ? { borderRightColor: cell.employee.color } : {}),
                             }}
                             onMouseDown={(e) => {
