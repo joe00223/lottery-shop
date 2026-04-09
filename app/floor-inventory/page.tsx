@@ -169,7 +169,7 @@ export default function FloorInventoryPage() {
   const commitAndMove = (ed: EditingCell, direction?: 'right' | 'left' | 'up' | 'down') => {
     if (!ed) return
     const { date, ticketId, field, value } = ed
-    const num = Math.max(0, parseInt(value) || 0)
+    const num = field === 'restockSheets' ? (parseInt(value) || 0) : Math.max(0, parseInt(value) || 0)
 
     const key = `${date}__${ticketId}`
     setData(prev => {
@@ -194,6 +194,8 @@ export default function FloorInventoryPage() {
     else if (direction === 'left') nc = Math.max(nc - 1, 0)
     else if (direction === 'down') nd = Math.min(nd + 1, dates.length - 1)
     else if (direction === 'up') nd = Math.max(nd - 1, 0)
+
+    if (nc === colIdx && nd === dateIdx) { setEditing(null); return }
 
     const nextCol = cols[nc]
     const nextDate = dates[nd]
@@ -278,7 +280,7 @@ export default function FloorInventoryPage() {
             }}
           />
         ) : (
-          <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${showX ? 'text-red-300' : val > 0 ? 'text-gray-800 font-semibold' : 'text-gray-300'}`}>
+          <span className={`block px-2 py-2 cursor-pointer hover:bg-amber-100 transition-colors ${showX ? 'text-red-300' : val !== 0 ? 'text-gray-800 font-semibold' : 'text-gray-300'}`}>
             {showX ? '✕' : val}
           </span>
         )}
