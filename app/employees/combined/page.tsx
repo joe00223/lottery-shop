@@ -239,6 +239,12 @@ export default function CombinedPrintPage() {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
+          .total-bar {
+            margin-top: 0.4cm !important;
+            padding: 0.3cm 0.4cm !important;
+            font-size: 9pt !important;
+            border: 2px solid black !important;
+          }
         }
       `}</style>
 
@@ -293,6 +299,41 @@ export default function CombinedPrintPage() {
             start={start} end={end}
           />
         </div>
+
+        {/* 合計列 */}
+        {(() => {
+          const r1 = parseFloat(rate1) || 0
+          const r2 = parseFloat(rate2) || 0
+          const a1 = Object.values(adj1).reduce((s, v) => s + (parseFloat(v) || 0), 0)
+          const a2 = Object.values(adj2).reduce((s, v) => s + (parseFloat(v) || 0), 0)
+          const pay1 = totalHours1 * r1 + a1
+          const pay2 = totalHours2 * r2 + a2
+          const total = pay1 + pay2
+          const hasAny = r1 > 0 || r2 > 0
+          if (!hasAny) return null
+          return (
+            <div className="total-bar mt-4 bg-white border-2 border-black rounded-xl print:rounded-none p-4 print:p-3 shadow-sm print:shadow-none">
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-1 text-sm">
+                <span className="font-bold text-base">本期薪資合計</span>
+                {r1 > 0 && (
+                  <span className="text-gray-600">
+                    {employees.find(e => e.id === empId1)?.name ?? '員工一'}：
+                    <span className="font-semibold ml-1">${pay1 % 1 === 0 ? pay1 : pay1.toFixed(1)}</span>
+                  </span>
+                )}
+                {r2 > 0 && (
+                  <span className="text-gray-600">
+                    {employees.find(e => e.id === empId2)?.name ?? '員工二'}：
+                    <span className="font-semibold ml-1">${pay2 % 1 === 0 ? pay2 : pay2.toFixed(1)}</span>
+                  </span>
+                )}
+                <span className="font-bold text-lg ml-auto border-l-2 border-black pl-6">
+                  總計 ${total % 1 === 0 ? total : total.toFixed(1)}
+                </span>
+              </div>
+            </div>
+          )
+        })()}
       </div>
     </>
   )
