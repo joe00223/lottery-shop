@@ -53,7 +53,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     hours: number
   }> = []
 
-  for (const { date, hours } of Object.values(byDate)) {
+  // Sort by actual date ascending before building shifts
+  const sortedByDate = Object.values(byDate).sort((a, b) => a.date.getTime() - b.date.getTime())
+
+  for (const { date, hours } of sortedByDate) {
     hours.sort((a, b) => a - b)
     // Merge consecutive hours into blocks
     let i = 0
