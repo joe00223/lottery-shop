@@ -27,22 +27,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     orderBy: [{ weekStart: 'asc' }, { dayOfWeek: 'asc' }, { hour: 'asc' }],
   })
 
-  // Compute actual date for each entry and filter to range
+  // Compute actual LOCAL date for each entry and filter to range
+  function localDateKey(d: Date) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
   const entries = schedules
     .map((s) => {
       const offset = s.dayOfWeek === 0 ? 6 : s.dayOfWeek - 1
-      const date = new Date(s.weekStart)
-      date.setDate(date.getDate() + offset)
-      date.setHours(0, 0, 0, 0)
-      return { date, hour: s.hour, dateKey: date.toISOString().slice(0, 10) }
+      // Reconstruct weekStart as local midnight to avoid UTC offset shifting the day
+      const ws = new Date(s.weekStart)
+      const date = new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + offset)
+      return { date, hour: s.hour, dateKey: localDateKey(date) }
     })
     .filter((e) => e.date >= start && e.date <= end)
 
-  // Group by date, then merge consecutive hours into shift blocks
-  const byDate: { [key: string]: { date: Date; hours: number[] } } = {}
+  // Group by local date; deduplicate hours per day (handles multiple rowIndex)
+  const byDate: { [key: string]: { date: Date; hours: Set<number> } } = {}
   for (const e of entries) {
-    if (!byDate[e.dateKey]) byDate[e.dateKey] = { date: e.date, hours: [] }
-    byDate[e.dateKey].hours.push(e.hour)
+    if (!byDate[e.dateKey]) byDate[e.dateKey] = { date: e.date, hours: new Set() }
+    byDate[e.dateKey].hours.add(e.hour)
   }
 
   const shifts: Array<{
@@ -53,11 +57,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     hours: number
   }> = []
 
-  // Sort by actual date ascending before building shifts
+  // Sort by actual local date ascending
   const sortedByDate = Object.values(byDate).sort((a, b) => a.date.getTime() - b.date.getTime())
 
-  for (const { date, hours } of sortedByDate) {
-    hours.sort((a, b) => a - b)
+  for (const { date, hours: hoursSet } of sortedByDate) {
+    const hours = [...hoursSet].sort((a, b) => a - b)
     // Merge consecutive hours into blocks
     let i = 0
     while (i < hours.length) {
