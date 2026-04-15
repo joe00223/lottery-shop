@@ -84,7 +84,7 @@ function Slip({
               <th className="text-center py-1 font-bold w-8">星期</th>
               <th className="text-left py-1 font-bold print:hidden">時段</th>
               <th className="text-center py-1 font-bold w-8">時數</th>
-              <th className="text-center py-1 font-bold">調整</th>
+              <th className="text-center py-1 font-bold w-12">調整</th>
               <th className="text-right py-1 font-bold">小計</th>
             </tr>
           </thead>

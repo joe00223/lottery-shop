@@ -129,7 +129,7 @@ export default function EmployeeDetailPage() {
                 <th className="text-center py-1.5 px-2 font-bold w-10">星期</th>
                 <th className="text-left py-1.5 px-3 font-bold">時段</th>
                 <th className="text-center py-1.5 px-2 font-bold w-14">時數</th>
-                <th className="text-center py-1.5 px-2 font-bold w-24">調整（元）</th>
+                <th className="text-center py-1.5 px-2 font-bold w-12">調整（元）</th>
                 <th className="text-right py-1.5 pl-3 font-bold w-20">小計</th>
               </tr>
             </thead>
