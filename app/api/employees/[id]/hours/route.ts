@@ -14,15 +14,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ shifts: [], totalHours: 0 })
   }
 
-  // Find weekStarts overlapping the range
-  const rangeStart = new Date(start)
-  const dow = rangeStart.getDay()
-  rangeStart.setDate(rangeStart.getDate() - (dow === 0 ? 6 : dow - 1))
+  // Find all weeks that could overlap the range.
+  // A week (Mon–Sun) overlaps [start, end] if weekStart <= end AND weekStart >= start - 6 days.
+  const startMinus6 = new Date(start)
+  startMinus6.setDate(startMinus6.getDate() - 6)
 
   const schedules = await prisma.schedule.findMany({
     where: {
       employeeId: parseInt(id),
-      weekStart: { gte: rangeStart, lte: end },
+      weekStart: { gte: startMinus6, lte: end },
     },
     orderBy: [{ weekStart: 'asc' }, { dayOfWeek: 'asc' }, { hour: 'asc' }],
   })
