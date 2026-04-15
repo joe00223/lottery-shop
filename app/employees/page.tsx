@@ -74,12 +74,20 @@ export default function EmployeesPage() {
     <div className="max-w-xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-amber-950">員工管理</h1>
-        <button
-          onClick={openAdd}
-          className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600"
-        >
-          新增員工
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push('/employees/combined')}
+            className="px-3 py-2 border border-amber-300 text-amber-800 rounded-lg text-sm font-medium hover:bg-amber-50"
+          >
+            合併列印
+          </button>
+          <button
+            onClick={openAdd}
+            className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600"
+          >
+            新增員工
+          </button>
+        </div>
       </div>
 
       {/* Employee list */}
