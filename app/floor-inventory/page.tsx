@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 type Ticket = { id: number; name: string; price: number; sheetsPerBook: number }
-type CellData = { unopened: number; opened: number; onDisplay: number; restockSheets: number }
-type Field = 'unopened' | 'opened' | 'onDisplay' | 'restockSheets'
+type CellData = { unopened: number; opened: number; onDisplay: number; restockSheets: number; deductSheets: number }
+type Field = 'unopened' | 'opened' | 'onDisplay' | 'restockSheets' | 'deductSheets'
 type EditingCell = { date: string; ticketId: number; field: Field; value: string } | null
 
 const FIELDS: { key: Field; label: string }[] = [
@@ -12,6 +12,7 @@ const FIELDS: { key: Field; label: string }[] = [
   { key: 'opened', label: '已開封' },
   { key: 'onDisplay', label: '檯面上' },
   { key: 'restockSheets', label: '補張' },
+  { key: 'deductSheets', label: '扣張' },
 ]
 
 function toDateStr(d: Date) {
@@ -42,6 +43,9 @@ export default function FloorInventoryPage() {
   const [addBooksCount, setAddBooksCount] = useState('')
   const [showRestock, setShowRestock] = useState(false)
   const [stockMap, setStockMap] = useState<Record<number, number>>({})
+  const [deductModal, setDeductModal] = useState<{ ticketId: number; ticketName: string } | null>(null)
+  const [deductDate, setDeductDate] = useState(toDateStr(new Date()))
+  const [deductCount, setDeductCount] = useState('')
 
   useEffect(() => {
     try {
@@ -75,7 +79,7 @@ export default function FloorInventoryPage() {
     const map: Record<string, CellData> = {}
     for (const [date, records] of Object.entries(d)) {
       for (const r of records as (CellData & { scratchTicketId: number })[]) {
-        map[`${date}__${r.scratchTicketId}`] = { unopened: r.unopened, opened: r.opened, onDisplay: r.onDisplay, restockSheets: r.restockSheets ?? 0 }
+        map[`${date}__${r.scratchTicketId}`] = { unopened: r.unopened, opened: r.opened, onDisplay: r.onDisplay, restockSheets: r.restockSheets ?? 0, deductSheets: r.deductSheets ?? 0 }
       }
     }
     setData(map)
@@ -164,7 +168,7 @@ export default function FloorInventoryPage() {
     setEditing({ date, ticketId, field, value: String(val) })
   }
 
-  const displayFields = showRestock ? FIELDS : FIELDS.filter(f => f.key !== 'restockSheets')
+  const displayFields = showRestock ? FIELDS : FIELDS.filter(f => f.key !== 'restockSheets' && f.key !== 'deductSheets')
 
   const commitAndMove = (ed: EditingCell, direction?: 'right' | 'left' | 'up' | 'down') => {
     if (!ed) return
@@ -173,7 +177,7 @@ export default function FloorInventoryPage() {
 
     const key = `${date}__${ticketId}`
     setData(prev => {
-      const current = prev[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0 }
+      const current = prev[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0, deductSheets: 0 }
       const updated = { ...current, [field]: num }
       fetch('/api/floor-inventory', {
         method: 'POST',
@@ -209,6 +213,31 @@ export default function FloorInventoryPage() {
     })
   }
 
+  const openDeduct = (t: Ticket) => {
+    setDeductDate(toDateStr(new Date()))
+    setDeductCount('')
+    setDeductModal({ ticketId: t.id, ticketName: t.name })
+  }
+
+  const saveDeduct = async () => {
+    if (!deductModal) return
+    const sheets = Math.max(0, parseInt(deductCount) || 0)
+    if (sheets === 0) { setDeductModal(null); return }
+    const { ticketId } = deductModal
+    const key = `${deductDate}__${ticketId}`
+    const current = data[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0, deductSheets: 0 }
+    const newDeductSheets = current.deductSheets + sheets
+    await fetch('/api/floor-inventory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: deductDate, scratchTicketId: ticketId, ...current, deductSheets: newDeductSheets }),
+    })
+    setData(prev => ({ ...prev, [key]: { ...current, deductSheets: newDeductSheets } }))
+    addDate(deductDate)
+    setDeductModal(null)
+    setDeductCount('')
+  }
+
   const openAddBooks = (t: Ticket) => {
     setAddBooksDate(toDateStr(new Date()))
     setAddBooksCount('')
@@ -221,7 +250,7 @@ export default function FloorInventoryPage() {
     if (books === 0) { setAddBooksModal(null); return }
     const { ticketId, sheetsPerBook } = addBooksModal
     const key = `${addBooksDate}__${ticketId}`
-    const current = data[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0 }
+    const current = data[key] ?? { unopened: 0, opened: 0, onDisplay: 0, restockSheets: 0, deductSheets: 0 }
     const newUnopened = current.unopened + books
     const newRestockSheets = current.restockSheets + books * sheetsPerBook
     await Promise.all([
@@ -322,7 +351,7 @@ export default function FloorInventoryPage() {
           <div className="w-px h-5 bg-amber-200" />
           <button onClick={() => setShowRestock(r => !r)}
             className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${showRestock ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-white border border-amber-300 text-amber-700 hover:bg-amber-50'}`}
-          >補張</button>
+          >張數異動</button>
         </div>
       </div>
 
@@ -364,14 +393,24 @@ export default function FloorInventoryPage() {
                             <div className="flex items-center justify-center gap-1.5">
                               <span>{t.name}</span>
                               {showRestock && (
-                                <button
-                                  draggable={false}
-                                  onMouseDown={e => e.stopPropagation()}
-                                  onDragStart={e => e.stopPropagation()}
-                                  onClick={e => { e.stopPropagation(); openAddBooks(t) }}
-                                  className="text-amber-600 hover:text-white hover:bg-amber-500 border border-amber-400 rounded px-1 text-xs font-bold leading-none py-0.5 transition-colors cursor-pointer"
-                                  title="補未拆封"
-                                >＋</button>
+                                <>
+                                  <button
+                                    draggable={false}
+                                    onMouseDown={e => e.stopPropagation()}
+                                    onDragStart={e => e.stopPropagation()}
+                                    onClick={e => { e.stopPropagation(); openAddBooks(t) }}
+                                    className="text-amber-600 hover:text-white hover:bg-amber-500 border border-amber-400 rounded px-1 text-xs font-bold leading-none py-0.5 transition-colors cursor-pointer"
+                                    title="補未拆封"
+                                  >+</button>
+                                  <button
+                                    draggable={false}
+                                    onMouseDown={e => e.stopPropagation()}
+                                    onDragStart={e => e.stopPropagation()}
+                                    onClick={e => { e.stopPropagation(); openDeduct(t) }}
+                                    className="text-red-500 hover:text-white hover:bg-red-400 border border-red-300 rounded px-1 text-xs font-bold leading-none py-0.5 transition-colors cursor-pointer"
+                                    title="扣張數"
+                                  >-</button>
+                                </>
                               )}
                             </div>
                           </th>
@@ -418,6 +457,40 @@ export default function FloorInventoryPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {deductModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setDeductModal(null)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-red-700 mb-4">扣張數 — {deductModal.ticketName}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-600">日期</label>
+                <input type="date" value={deductDate}
+                  onChange={e => setDeductDate(e.target.value)}
+                  className="w-full mt-1 border border-amber-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">扣除張數</label>
+                <input type="text" inputMode="numeric" autoFocus
+                  value={deductCount}
+                  onChange={e => setDeductCount(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveDeduct(); if (e.key === 'Escape') setDeductModal(null) }}
+                  className="w-full mt-1 border border-red-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  placeholder="輸入張數"
+                />
+              </div>
+              <div className="text-xs text-gray-400">
+                張數異動 -{parseInt(deductCount) || 0} 張，不計入售出
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setDeductModal(null)} className="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">取消</button>
+              <button onClick={saveDeduct} className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600">確認</button>
+            </div>
+          </div>
         </div>
       )}
 

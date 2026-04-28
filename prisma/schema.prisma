@@ -60,6 +60,7 @@ model FloorInventory {
   opened          Int           @default(0)
   onDisplay       Int           @default(0)
   restockSheets   Int           @default(0)
+  deductSheets    Int           @default(0)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

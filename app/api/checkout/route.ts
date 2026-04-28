@@ -34,8 +34,9 @@ export async function GET(req: Request) {
         ((yd?.unopened ?? 0) - (td?.unopened ?? 0)) * t.sheetsPerBook +
         ((yd?.opened ?? 0) - (td?.opened ?? 0))
       const restockSheets = td?.restockSheets ?? 0
+      const deductSheets = td?.deductSheets ?? 0
       const todayDisplay = td?.onDisplay ?? 0
-      const sold = yesterdayDisplay + supplement + restockSheets - todayDisplay
+      const sold = yesterdayDisplay + supplement + restockSheets - todayDisplay - deductSheets
       return {
         id: t.id,
         name: t.name,
@@ -44,6 +45,7 @@ export async function GET(req: Request) {
         yesterdayDisplay,
         supplement,
         restockSheets,
+        deductSheets,
         todayDisplay,
         sold,
       }

@@ -48,6 +48,7 @@ export async function POST(req: Request) {
     if (body.opened !== undefined) update.opened = body.opened
     if (body.onDisplay !== undefined) update.onDisplay = body.onDisplay
     if (body.restockSheets !== undefined) update.restockSheets = body.restockSheets
+    if (body.deductSheets !== undefined) update.deductSheets = body.deductSheets
 
     const record = await prisma.floorInventory.upsert({
       where: key,
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
         opened: body.opened ?? 0,
         onDisplay: body.onDisplay ?? 0,
         restockSheets: body.restockSheets ?? 0,
+        deductSheets: body.deductSheets ?? 0,
       },
     })
     return NextResponse.json(record)
