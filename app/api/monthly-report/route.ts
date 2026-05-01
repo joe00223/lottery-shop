@@ -44,9 +44,11 @@ export async function GET(req: Request) {
     for (const s of summaries) summaryMap[toDateStr(s.date)] = s
 
     const extraMap: Record<string, number> = {}
+    const namedTotals: Record<string, number> = {}
     for (const item of extraItems) {
       const key = toDateStr(item.date)
       extraMap[key] = (extraMap[key] ?? 0) + item.amount
+      namedTotals[item.name] = (namedTotals[item.name] ?? 0) + item.amount
     }
 
     const days: string[] = []
@@ -105,7 +107,7 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json({ year, month, rows, scratchBreakdown })
+    return NextResponse.json({ year, month, rows, scratchBreakdown, namedTotals })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
