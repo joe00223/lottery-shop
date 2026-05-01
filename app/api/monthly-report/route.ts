@@ -107,7 +107,8 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json({ year, month, rows, scratchBreakdown, namedTotals })
+    const debugExtraNames = [...new Set(extraItems.map(i => i.name))]
+    return NextResponse.json({ year, month, rows, scratchBreakdown, namedTotals, debugExtraNames, debugExtraCount: extraItems.length })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
