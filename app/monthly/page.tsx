@@ -33,8 +33,6 @@ export default function MonthlyPage() {
   const [rows, setRows] = useState<DayRow[]>([])
   const [scratchBreakdown, setScratchBreakdown] = useState<ScratchBreakdown[]>([])
   const [namedTotals, setNamedTotals] = useState<Record<string, number>>({})
-  const [debugExtraNames, setDebugExtraNames] = useState<string[]>([])
-  const [debugExtraCount, setDebugExtraCount] = useState(0)
   const [items, setItems] = useState<MonthlyItem[]>([])
   const [templates, setTemplates] = useState<Template[]>([])
   const [showTpl, setShowTpl] = useState(false)
@@ -70,8 +68,6 @@ export default function MonthlyPage() {
       setRows(report.rows)
       setScratchBreakdown(report.scratchBreakdown ?? [])
       setNamedTotals(report.namedTotals ?? {})
-      setDebugExtraNames(report.debugExtraNames ?? [])
-      setDebugExtraCount(report.debugExtraCount ?? 0)
       setTemplates(tplData)
 
       // Auto-populate from template if month has no items
@@ -261,8 +257,8 @@ export default function MonthlyPage() {
     { id: -1, name: '彩券傭金', income: Math.round(total.lotterySales * 0.08), expense: 0, note: `${total.lotterySales.toLocaleString()} × 8%`, fixed: true },
     { id: -2, name: '刮刮樂傭金', income: Math.round(total.scratchSales * 0.09), expense: 0, note: `${total.scratchSales.toLocaleString()} × 9%`, fixed: true },
     { id: -3, name: '運彩傭金', income: Math.round((total.sportsSales + total.virtualSports) * 0.0625), expense: 0, note: `${(total.sportsSales + total.virtualSports).toLocaleString()} × 6.25%`, fixed: true },
-    { id: -4, name: '台彩回饋', income: 0, expense: Math.abs(namedTotals['台彩回饋'] ?? 0), note: `共${debugExtraCount}筆 名稱:${debugExtraNames.join('|')}`, fixed: true },
-    { id: -5, name: '運彩回饋', income: 0, expense: Math.abs(namedTotals['運彩回饋'] ?? 0), note: `每日加總`, fixed: true },
+    { id: -4, name: '台彩回饋', income: 0, expense: Math.abs(namedTotals['台彩回饋'] ?? 0), note: '每日加總', fixed: true },
+    { id: -5, name: '運彩回饋', income: 0, expense: Math.abs(namedTotals['運彩回饋'] ?? 0), note: '每日加總', fixed: true },
   ]
   const allItems = [...fixedItems, ...items.map(it => ({ ...it, fixed: false }))]
   const commTotalIncome = allItems.reduce((s, it) => s + it.income, 0)
@@ -462,7 +458,7 @@ export default function MonthlyPage() {
                       </td>
                       <td className="px-0 py-0 border-r border-amber-100 text-right">
                         {it.fixed
-                          ? <span className="block px-3 py-2 text-gray-300">—</span>
+                          ? <span className="block px-3 py-2 text-red-600 font-semibold">{it.expense > 0 ? it.expense.toLocaleString() : '—'}</span>
                           : cellInput(it.id, 'expense', '—', 'right')}
                       </td>
                       <td className="px-0 py-0">
