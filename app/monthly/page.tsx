@@ -257,8 +257,8 @@ export default function MonthlyPage() {
     { id: -1, name: '彩券傭金', income: Math.round(total.lotterySales * 0.08), expense: 0, note: `${total.lotterySales.toLocaleString()} × 8%`, fixed: true },
     { id: -2, name: '刮刮樂傭金', income: Math.round(total.scratchSales * 0.09), expense: 0, note: `${total.scratchSales.toLocaleString()} × 9%`, fixed: true },
     { id: -3, name: '運彩傭金', income: Math.round((total.sportsSales + total.virtualSports) * 0.0625), expense: 0, note: `${(total.sportsSales + total.virtualSports).toLocaleString()} × 6.25%`, fixed: true },
-    { id: -4, name: '台彩回饋', income: namedTotals['台彩回饋'] ?? 0, expense: 0, note: '每日加總', fixed: true },
-    { id: -5, name: '運彩回饋', income: namedTotals['運彩回饋'] ?? 0, expense: 0, note: '每日加總', fixed: true },
+    { id: -4, name: '台彩回饋', income: Math.abs(namedTotals['台彩回饋'] ?? 0), expense: 0, note: '每日加總', fixed: true },
+    { id: -5, name: '運彩回饋', income: Math.abs(namedTotals['運彩回饋'] ?? 0), expense: 0, note: '每日加總', fixed: true },
   ]
   const allItems = [...fixedItems, ...items.map(it => ({ ...it, fixed: false }))]
   const commTotalIncome = allItems.reduce((s, it) => s + it.income, 0)
